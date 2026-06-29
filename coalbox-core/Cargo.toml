@@ -1,0 +1,20 @@
+[package]
+name = "coalbox-core"
+version = "0.1.0"
+edition = "2024"
+description = "Coalbox password manager core library"
+
+[dependencies]
+aes-gcm = "0.10"
+argon2 = "0.5"
+rand = "0.8"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+uuid = { version = "1", features = ["v4", "serde"] }
+chrono = { version = "0.4", features = ["serde"] }
+zeroize = { version = "1", features = ["derive"] }
+thiserror = "2"
+rmp-serde = "1"
+
+[dev-dependencies]
+tempfile = "3"

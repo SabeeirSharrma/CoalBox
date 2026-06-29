@@ -1,0 +1,17 @@
+[package]
+name = "coalbox"
+version = "0.1.0"
+edition = "2024"
+description = "Coalbox password manager CLI"
+
+[[bin]]
+name = "coalbox"
+path = "src/main.rs"
+
+[dependencies]
+coalbox-core = { path = "../coalbox-core" }
+clap = { version = "4", features = ["derive"] }
+rpassword = "7"
+colored = "3"
+rand = "0.8"
+shellexpand = "3"
