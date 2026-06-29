@@ -1,15 +1,32 @@
 use clap::{Parser, Subcommand};
 use colored::Colorize;
+use serde::Serialize;
 use std::path::PathBuf;
+use std::process;
 
 use coalbox_core::{
     audit_passwords, check_password, export_file, generate_passphrase, generate_password,
     import_file, Entry, ImportFormat, PassphraseConfig, PasswordConfig, TotpConfig, Vault,
 };
 
+const EXIT_ERROR: i32 = 1;
+
 #[derive(Parser)]
-#[command(name = "coalbox", version = "0.4.0", about = "Coalbox password manager")]
+#[command(
+    name = "coalbox",
+    version = "0.5.0",
+    about = "Coalbox password manager",
+    after_help = "Run 'coalbox <command> --help' for more information on a specific command."
+)]
 struct Cli {
+    /// Output in JSON format
+    #[arg(long, global = true)]
+    json: bool,
+
+    /// Suppress non-essential output
+    #[arg(short, long, global = true)]
+    quiet: bool,
+
     #[command(subcommand)]
     command: Commands,
 }
@@ -31,6 +48,10 @@ enum Commands {
         /// Vault file path
         #[arg(short, long)]
         vault: Option<String>,
+
+        /// Output field to return (title, username, password, url, totp, notes, json)
+        #[arg(short = 'f', long)]
+        field: Option<String>,
     },
 
     /// List all entries
@@ -38,6 +59,14 @@ enum Commands {
         /// Vault file path
         #[arg(short, long)]
         vault: Option<String>,
+
+        /// Filter by tag
+        #[arg(short, long)]
+        tag: Option<String>,
+
+        /// Filter by type (login, note, card, identity)
+        #[arg(short = 't', long)]
+        entry_type: Option<String>,
     },
 
     /// Generate a password or passphrase
@@ -141,6 +170,28 @@ enum Commands {
     },
 }
 
+// ── JSON output helpers ──────────────────────────────────────────────
+
+fn json_output<T: Serialize>(data: &T) {
+    println!("{}", serde_json::to_string(data).unwrap());
+}
+
+fn json_error(msg: &str) {
+    let obj = serde_json::json!({ "error": msg });
+    eprintln!("{}", serde_json::to_string(&obj).unwrap());
+}
+
+fn exit_error(cli: &Cli, msg: &str) -> ! {
+    if cli.json {
+        json_error(msg);
+    } else {
+        eprintln!("{} {}", "error:".red().bold(), msg);
+    }
+    process::exit(EXIT_ERROR);
+}
+
+// ── Vault helpers ────────────────────────────────────────────────────
+
 fn default_vault_path() -> PathBuf {
     let home = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
     PathBuf::from(home)
@@ -154,15 +205,51 @@ fn prompt_password(prompt: &str) -> String {
     rpassword::prompt_password(prompt).expect("Failed to read password")
 }
 
-fn create_vault(path: &str) {
+fn resolve_vault_path(opts: &Option<String>) -> PathBuf {
+    opts.as_ref()
+        .map(|p| PathBuf::from(shellexpand::tilde(p).to_string()))
+        .unwrap_or_else(default_vault_path)
+}
+
+fn unlock_vault(cli: &Cli, vault_path: &Option<String>) -> (Vault, String) {
+    let path = resolve_vault_path(vault_path);
+
+    if !path.exists() {
+        exit_error(cli, &format!("Vault not found at {}", path.display()));
+    }
+
+    let password = prompt_password("Enter master password: ");
+
+    match Vault::unlock(&path, &password) {
+        Ok(vault) => (vault, password),
+        Err(e) => exit_error(cli, &format!("Failed to unlock vault: {}", e)),
+    }
+}
+
+fn find_entry(vault: &Vault, query: &str) -> Entry {
+    vault
+        .get_entry_by_title(query)
+        .or_else(|_| vault.get_entry_by_url(query))
+        .or_else(|_| {
+            let results = vault.search(query);
+            if results.is_empty() {
+                Err(coalbox_core::CoalboxError::EntryNotFound(query.to_string()))
+            } else {
+                Ok(results.into_iter().next().unwrap())
+            }
+        })
+        .unwrap_or_else(|e| {
+            eprintln!("{} {}", "error:".red().bold(), e);
+            process::exit(EXIT_ERROR);
+        })
+}
+
+// ── Command handlers ─────────────────────────────────────────────────
+
+fn create_vault(cli: &Cli, path: &str) {
     let path = PathBuf::from(shellexpand::tilde(path).to_string());
     if path.exists() {
-        eprintln!(
-            "{} Vault already exists at {}",
-            "error:".red().bold(),
-            path.display()
-        );
-        std::process::exit(1);
+        exit_error(cli, &format!("Vault already exists at {}", path.display()));
     }
 
     if let Some(parent) = path.parent() {
@@ -173,142 +260,540 @@ fn create_vault(path: &str) {
     let confirm = prompt_password("Confirm master password: ");
 
     if password != confirm {
-        eprintln!("{} Passwords don't match", "error:".red().bold());
-        std::process::exit(1);
+        exit_error(cli, "Passwords don't match");
     }
 
     if password.len() < 8 {
-        eprintln!(
-            "{} Master password must be at least 8 characters",
-            "error:".red().bold()
-        );
-        std::process::exit(1);
+        exit_error(cli, "Master password must be at least 8 characters");
     }
 
     match Vault::create(&path, &password) {
         Ok(vault) => {
-            println!(
-                "{} Created vault at {}",
-                "✓".green().bold(),
-                path.display()
-            );
-            println!("  {} entries", vault.entry_count());
+            if cli.json {
+                json_output(&serde_json::json!({
+                    "ok": true,
+                    "path": path.display().to_string(),
+                    "entries": vault.entry_count()
+                }));
+            } else if !cli.quiet {
+                println!(
+                    "{} Created vault at {}",
+                    "✓".green().bold(),
+                    path.display()
+                );
+                println!("  {} entries", vault.entry_count());
+            }
         }
-        Err(e) => {
-            eprintln!("{} Failed to create vault: {}", "error:".red().bold(), e);
-            std::process::exit(1);
+        Err(e) => exit_error(cli, &format!("Failed to create vault: {}", e)),
+    }
+}
+
+fn get_entry(cli: &Cli, query: &str, vault_path_opt: &Option<String>, field: &Option<String>) {
+    let (vault, _password) = unlock_vault(cli, vault_path_opt);
+    let entry = find_entry(&vault, query);
+
+    if cli.json {
+        match field.as_deref() {
+            Some("title") => println!("{}", serde_json::to_string(&entry.title).unwrap()),
+            Some("username") => {
+                println!(
+                    "{}",
+                    serde_json::to_string(&entry.username.as_deref().unwrap_or("")).unwrap()
+                )
+            }
+            Some("password") => {
+                println!(
+                    "{}",
+                    serde_json::to_string(&entry.password.as_deref().unwrap_or("")).unwrap()
+                )
+            }
+            Some("url") => {
+                println!(
+                    "{}",
+                    serde_json::to_string(&entry.url.as_deref().unwrap_or("")).unwrap()
+                )
+            }
+            Some("totp") => {
+                let totp = entry
+                    .totp_secret
+                    .as_ref()
+                    .and_then(|s| TotpConfig::from_secret(s).ok())
+                    .map(|c| c.generate_current());
+                let code = totp.as_ref().map(|t| t.code.as_str()).unwrap_or("");
+                let remaining = totp.as_ref().map(|t| t.remaining).unwrap_or(0);
+                json_output(&serde_json::json!({ "code": code, "remaining": remaining }));
+            }
+            Some("notes") => {
+                println!(
+                    "{}",
+                    serde_json::to_string(&entry.notes.as_deref().unwrap_or("")).unwrap()
+                )
+            }
+            None => json_output(&entry),
+            Some(f) => exit_error(cli, &format!("Unknown field: {}", f)),
+        }
+    } else {
+        match field.as_deref() {
+            Some("title") => println!("{}", entry.title),
+            Some("username") => println!("{}", entry.username.as_deref().unwrap_or("")),
+            Some("password") => println!("{}", entry.password.as_deref().unwrap_or("")),
+            Some("url") => println!("{}", entry.url.as_deref().unwrap_or("")),
+            Some("totp") => {
+                if let Some(ref secret) = entry.totp_secret {
+                    match TotpConfig::from_secret(secret) {
+                        Ok(config) => {
+                            let code = config.generate_current();
+                            println!("{} ({}s remaining)", code.code, code.remaining);
+                        }
+                        Err(e) => exit_error(cli, &format!("Invalid TOTP secret: {}", e)),
+                    }
+                } else {
+                    exit_error(cli, "No TOTP configured for this entry");
+                }
+            }
+            Some("notes") => println!("{}", entry.notes.as_deref().unwrap_or("")),
+            None => print_entry_pretty(&entry),
+            Some(f) => exit_error(cli, &format!("Unknown field: {}", f)),
         }
     }
 }
 
-fn unlock_vault(vault_path: &Option<String>) -> (Vault, String) {
-    let path = vault_path
-        .as_ref()
-        .map(|p| PathBuf::from(shellexpand::tilde(p).to_string()))
-        .unwrap_or_else(default_vault_path);
+fn list_entries(
+    cli: &Cli,
+    vault_path_opt: &Option<String>,
+    tag: &Option<String>,
+    entry_type: &Option<String>,
+) {
+    let (vault, _password) = unlock_vault(cli, vault_path_opt);
+
+    let entries = vault.list_entries().unwrap_or_default();
+    let filtered: Vec<&Entry> = entries
+        .iter()
+        .filter(|e| {
+            if let Some(t) = tag
+                && !e.tags.contains(t)
+            {
+                return false;
+            }
+            if let Some(t) = entry_type {
+                let type_str = match e.entry_type {
+                    coalbox_core::entry::EntryType::Login => "login",
+                    coalbox_core::entry::EntryType::Note => "note",
+                    coalbox_core::entry::EntryType::Card => "card",
+                    coalbox_core::entry::EntryType::Identity => "identity",
+                };
+                if type_str != t.as_str() {
+                    return false;
+                }
+            }
+            true
+        })
+        .collect();
+
+    if cli.json {
+        json_output(&filtered);
+    } else if !cli.quiet {
+        if filtered.is_empty() {
+            println!("No entries in vault.");
+            return;
+        }
+
+        println!("{} entries in vault:\n", filtered.len().to_string().cyan());
+        for entry in &filtered {
+            print_entry_summary(entry);
+        }
+    }
+}
+
+#[allow(clippy::too_many_arguments)]
+fn handle_generate(cli: &Cli, passphrase: bool, length: usize, words: usize, separator: String, capitalize: bool, number: bool, uppercase: bool, lowercase: bool, numbers: bool, symbols: bool) {
+    if passphrase {
+        let config = PassphraseConfig {
+            word_count: words,
+            separator,
+            capitalize,
+            include_number: number,
+        };
+        let result = generate_passphrase(&config);
+        if cli.json {
+            json_output(&serde_json::json!({ "passphrase": result }));
+        } else {
+            println!("{}", result);
+        }
+    } else {
+        let config = PasswordConfig {
+            length,
+            uppercase,
+            lowercase,
+            numbers,
+            symbols,
+            custom_symbols: None,
+            exclude_chars: None,
+        };
+        let result = generate_password(&config);
+        if cli.json {
+            json_output(&serde_json::json!({ "password": result }));
+        } else {
+            println!("{}", result);
+        }
+    }
+}
+
+fn show_info(cli: &Cli, vault_path_opt: &Option<String>) {
+    let path = resolve_vault_path(vault_path_opt);
 
     if !path.exists() {
-        eprintln!(
-            "{} Vault not found at {}",
-            "error:".red().bold(),
-            path.display()
-        );
-        eprintln!(
-            "  Run {} to create a vault",
-            "coalbox create".cyan()
-        );
-        std::process::exit(1);
+        exit_error(cli, &format!("Vault not found at {}", path.display()));
     }
 
-    let password = prompt_password("Enter master password: ");
+    let size = std::fs::metadata(&path).map(|m| m.len()).unwrap_or(0);
 
-    match Vault::unlock(&path, &password) {
-        Ok(vault) => (vault, password),
-        Err(e) => {
-            eprintln!("{} Failed to unlock vault: {}", "error:".red().bold(), e);
-            std::process::exit(1);
-        }
+    if cli.json {
+        json_output(&serde_json::json!({
+            "path": path.display().to_string(),
+            "size_bytes": size,
+            "format": ".emberkeys",
+            "cipher": "AES-256-GCM",
+            "kdf": "Argon2id",
+            "kdf_params": {
+                "memory_kb": 65536,
+                "iterations": 3,
+                "parallelism": 4
+            }
+        }));
+    } else if !cli.quiet {
+        println!("{}", "═".repeat(50).dimmed());
+        println!("Vault: {}", path.display().to_string().bold());
+        println!("Size:  {} bytes", size);
+        println!("{}", "═".repeat(50).dimmed());
+        println!("Format: .emberkeys (EMBK v1)");
+        println!("Cipher: AES-256-GCM");
+        println!("KDF:    Argon2id (64MB, 3 iter, 4 parallel)");
     }
 }
 
-fn get_entry(query: &str, vault_path: &Option<String>) {
-    let (vault, _password) = unlock_vault(vault_path);
+fn show_totp(cli: &Cli, query: &str, vault_path_opt: &Option<String>) {
+    let (vault, _password) = unlock_vault(cli, vault_path_opt);
+    let entry = find_entry(&vault, query);
 
-    let entry = vault
-        .get_entry_by_title(query)
-        .or_else(|_| vault.get_entry_by_url(query))
-        .or_else(|_| {
-            let results = vault.search(query);
-            if results.is_empty() {
-                Err(coalbox_core::CoalboxError::EntryNotFound(query.to_string()))
-            } else {
-                Ok(results.into_iter().next().unwrap())
-            }
-        });
-
-    match entry {
-        Ok(entry) => {
-            print_entry(&entry);
-        }
-        Err(e) => {
-            eprintln!("{} {}", "error:".red().bold(), e);
-            std::process::exit(1);
-        }
-    }
-}
-
-fn list_entries(vault_path: &Option<String>) {
-    let (vault, _password) = unlock_vault(vault_path);
-
-    match vault.list_entries() {
-        Ok(entries) => {
-            if entries.is_empty() {
-                println!("No entries in vault.");
-                return;
-            }
-
-            println!("{} entries in vault:\n", entries.len().to_string().cyan());
-            for entry in &entries {
-                let type_str = match entry.entry_type {
-                    coalbox_core::entry::EntryType::Login => "login".blue(),
-                    coalbox_core::entry::EntryType::Note => "note".yellow(),
-                    coalbox_core::entry::EntryType::Card => "card".magenta(),
-                    coalbox_core::entry::EntryType::Identity => "identity".green(),
-                };
-
-                let fav = if entry.favourite { " ★" } else { "" };
-                let tags = if entry.tags.is_empty() {
-                    String::new()
+    match entry.totp_secret {
+        Some(ref secret) => match TotpConfig::from_secret(secret) {
+            Ok(config) => {
+                let code = config.generate_current();
+                if cli.json {
+                    json_output(&serde_json::json!({
+                        "title": entry.title,
+                        "code": code.code,
+                        "remaining": code.remaining
+                    }));
                 } else {
-                    format!(" [{}]", entry.tags.join(", ")).dimmed().to_string()
-                };
-
-                let display = entry.display_name();
-                println!(
-                    "  {} {} {} {}{}",
-                    entry.id.to_string()[..8].dimmed(),
-                    display.bold(),
-                    format!("[{}]", type_str).dimmed(),
-                    fav.yellow(),
-                    tags
-                );
-
-                if let Some(ref url) = entry.url {
-                    println!("    url: {}", url.dimmed());
-                }
-                if let Some(ref username) = entry.username {
-                    println!("    user: {}", username.dimmed());
+                    println!("{}", entry.title.bold());
+                    println!();
+                    println!(
+                        "  TOTP: {} ({}s remaining)",
+                        code.code.bold().green(),
+                        code.remaining
+                    );
                 }
             }
-        }
-        Err(e) => {
-            eprintln!("{} {}", "error:".red().bold(), e);
-            std::process::exit(1);
-        }
+            Err(e) => exit_error(cli, &format!("Invalid TOTP secret: {}", e)),
+        },
+        None => exit_error(cli, "No TOTP configured for this entry"),
     }
 }
 
-fn print_entry(entry: &Entry) {
+fn audit_vault(cli: &Cli, vault_path_opt: &Option<String>) {
+    let (vault, _password) = unlock_vault(cli, vault_path_opt);
+
+    if !cli.quiet && !cli.json {
+        println!("{}", "Checking passwords against HaveIBeenPwned...".dimmed());
+        println!();
+    }
+
+    let entries = vault.list_entries().unwrap_or_default();
+
+    match audit_passwords(&entries) {
+        Ok(result) => {
+            if cli.json {
+                json_output(&serde_json::json!({
+                    "total_entries": result.total_entries,
+                    "entries_with_passwords": result.entries_with_passwords,
+                    "breached_entries": result.breached_entries.iter().map(|e| {
+                        serde_json::json!({
+                            "title": e.title,
+                            "entry_id": e.entry_id,
+                            "breach_count": e.breach_count
+                        })
+                    }).collect::<Vec<_>>()
+                }));
+            } else if !cli.quiet {
+                println!("Vault audit complete:");
+                println!("  Total entries:       {}", result.total_entries);
+                println!(
+                    "  Entries with pass:   {}",
+                    result.entries_with_passwords
+                );
+                println!();
+
+                if result.breached_entries.is_empty() {
+                    println!(
+                        "{} No breached passwords found!",
+                        "✓".green().bold()
+                    );
+                } else {
+                    println!(
+                        "{} {} breached passwords found:",
+                        "⚠".red().bold(),
+                        result.breached_entries.len()
+                    );
+                    println!();
+                    for entry in &result.breached_entries {
+                        println!(
+                            "  {} {} — seen {} times in data breaches",
+                            entry.title.bold(),
+                            entry.entry_id.to_string()[..8].dimmed(),
+                            entry.breach_count.to_string().red()
+                        );
+                    }
+                }
+            }
+        }
+        Err(e) => exit_error(cli, &format!("Audit failed: {}", e)),
+    }
+}
+
+fn check_single_password(cli: &Cli, password: Option<String>) {
+    let pass = match password {
+        Some(p) => {
+            if p == "-" {
+                let mut input = String::new();
+                std::io::stdin()
+                    .read_line(&mut input)
+                    .expect("Failed to read from stdin");
+                input.trim().to_string()
+            } else {
+                p
+            }
+        }
+        None => prompt_password("Enter password to check: "),
+    };
+
+    match check_password(&pass) {
+        Ok(result) => {
+            if cli.json {
+                json_output(&serde_json::json!({
+                    "breached": result.breached,
+                    "count": result.count
+                }));
+            } else if result.breached {
+                println!(
+                    "{} Password found in {} data breaches!",
+                    "⚠".red().bold(),
+                    result.count.to_string().red().bold()
+                );
+                println!("  Do not use this password.");
+            } else {
+                println!(
+                    "{} Password not found in any data breaches.",
+                    "✓".green().bold()
+                );
+            }
+        }
+        Err(e) => exit_error(cli, &format!("Breach check failed: {}", e)),
+    }
+}
+
+fn parse_import_format(format: &str) -> ImportFormat {
+    match format.to_lowercase().as_str() {
+        "csv" => ImportFormat::Csv,
+        "bitwarden" | "bw" => ImportFormat::BitwardenJson,
+        "keepass" | "kpx" => ImportFormat::KeePassXml,
+        "1password" | "1pux" => ImportFormat::OnePassword1Pux,
+        "auto" => ImportFormat::Auto,
+        _ => ImportFormat::Auto,
+    }
+}
+
+fn import_entries(cli: &Cli, file: &str, format: &str, vault_path_opt: &Option<String>) {
+    let path = PathBuf::from(shellexpand::tilde(file).to_string());
+
+    if !path.exists() {
+        exit_error(cli, &format!("File not found: {}", path.display()));
+    }
+
+    let fmt = parse_import_format(format);
+    let detected_fmt = if matches!(fmt, ImportFormat::Auto) {
+        ImportFormat::detect(&path)
+    } else {
+        fmt.clone()
+    };
+
+    if !cli.quiet && !cli.json {
+        println!(
+            "{} Importing from {} (format: {:?})...",
+            "→".cyan(),
+            path.display(),
+            detected_fmt
+        );
+    }
+
+    let result = match import_file(&path, fmt) {
+        Ok(r) => r,
+        Err(e) => exit_error(cli, &format!("Import failed: {}", e)),
+    };
+
+    if result.entries.is_empty() {
+        if cli.json {
+            json_output(&serde_json::json!({
+                "ok": true,
+                "imported": 0,
+                "skipped": result.skipped,
+                "errors": result.errors
+            }));
+        } else if !cli.quiet {
+            eprintln!(
+                "{} No entries found in import file",
+                "warning:".yellow().bold()
+            );
+        }
+        return;
+    }
+
+    let (mut vault, password) = unlock_vault(cli, vault_path_opt);
+
+    let existing = vault
+        .list_entries()
+        .unwrap_or_default()
+        .into_iter()
+        .map(|e| e.title.to_lowercase())
+        .collect::<Vec<_>>();
+
+    let mut imported = 0;
+    let mut skipped_dupes = 0;
+
+    for entry in result.entries {
+        if existing.contains(&entry.title.to_lowercase()) {
+            skipped_dupes += 1;
+            if !cli.quiet && !cli.json {
+                println!(
+                    "  {} {} (duplicate, skipped)",
+                    "⊘".yellow(),
+                    entry.title
+                );
+            }
+            continue;
+        }
+        match vault.add_entry(entry.clone()) {
+            Ok(_) => {
+                imported += 1;
+                if !cli.quiet && !cli.json {
+                    println!("  {} {}", "✓".green(), entry.title);
+                }
+            }
+            Err(e) => {
+                if !cli.quiet && !cli.json {
+                    println!("  {} {} — {}", "✗".red(), entry.title, e);
+                }
+            }
+        }
+    }
+
+    if imported > 0
+        && let Err(e) = vault.save(&password)
+    {
+        exit_error(cli, &format!("Failed to save vault: {}", e));
+    }
+
+    if cli.json {
+        json_output(&serde_json::json!({
+            "ok": true,
+            "imported": imported,
+            "skipped_duplicates": skipped_dupes,
+            "parse_errors": result.errors.len(),
+            "skipped": result.skipped
+        }));
+    } else if !cli.quiet {
+        println!(
+            "\n{} Imported {} entries",
+            "✓".green().bold(),
+            imported.to_string().green().bold()
+        );
+    }
+}
+
+fn export_entries(cli: &Cli, file: &str, vault_path_opt: &Option<String>) {
+    let (vault, _password) = unlock_vault(cli, vault_path_opt);
+
+    let entries = match vault.list_entries() {
+        Ok(e) => e,
+        Err(e) => exit_error(cli, &format!("Failed to list entries: {}", e)),
+    };
+
+    let path = PathBuf::from(shellexpand::tilde(file).to_string());
+
+    if let Some(parent) = path.parent()
+        && !parent.exists()
+    {
+        std::fs::create_dir_all(parent).expect("Failed to create output directory");
+    }
+
+    match export_file(&entries, &path) {
+        Ok(()) => {
+            if cli.json {
+                json_output(&serde_json::json!({
+                    "ok": true,
+                    "exported": entries.len(),
+                    "path": path.display().to_string()
+                }));
+            } else if !cli.quiet {
+                println!(
+                    "{} Exported {} entries to {}",
+                    "✓".green().bold(),
+                    entries.len().to_string().green().bold(),
+                    path.display()
+                );
+            }
+        }
+        Err(e) => exit_error(cli, &format!("Export failed: {}", e)),
+    }
+}
+
+// ── Pretty printers ──────────────────────────────────────────────────
+
+fn print_entry_summary(entry: &Entry) {
+    let type_str = match entry.entry_type {
+        coalbox_core::entry::EntryType::Login => "login".blue(),
+        coalbox_core::entry::EntryType::Note => "note".yellow(),
+        coalbox_core::entry::EntryType::Card => "card".magenta(),
+        coalbox_core::entry::EntryType::Identity => "identity".green(),
+    };
+
+    let fav = if entry.favourite { " ★" } else { "" };
+    let tags = if entry.tags.is_empty() {
+        String::new()
+    } else {
+        format!(" [{}]", entry.tags.join(", ")).dimmed().to_string()
+    };
+
+    let display = entry.display_name();
+    println!(
+        "  {} {} {} {}{}",
+        entry.id.to_string()[..8].dimmed(),
+        display.bold(),
+        format!("[{}]", type_str).dimmed(),
+        fav.yellow(),
+        tags
+    );
+
+    if let Some(ref url) = entry.url {
+        println!("    url: {}", url.dimmed());
+    }
+    if let Some(ref username) = entry.username {
+        println!("    user: {}", username.dimmed());
+    }
+}
+
+fn print_entry_pretty(entry: &Entry) {
     let type_str = match entry.entry_type {
         coalbox_core::entry::EntryType::Login => "Login",
         coalbox_core::entry::EntryType::Note => "Secure Note",
@@ -428,354 +913,34 @@ fn print_entry(entry: &Entry) {
     );
 }
 
-#[allow(clippy::too_many_arguments)]
-fn handle_generate(
-    passphrase: bool,
-    length: usize,
-    words: usize,
-    separator: String,
-    capitalize: bool,
-    number: bool,
-    uppercase: bool,
-    lowercase: bool,
-    numbers: bool,
-    symbols: bool,
-) {
-    if passphrase {
-        let config = PassphraseConfig {
-            word_count: words,
-            separator,
-            capitalize,
-            include_number: number,
-        };
-        println!("{}", generate_passphrase(&config));
-    } else {
-        let config = PasswordConfig {
-            length,
-            uppercase,
-            lowercase,
-            numbers,
-            symbols,
-            custom_symbols: None,
-            exclude_chars: None,
-        };
-        println!("{}", generate_password(&config));
-    }
-}
-
-fn show_info(vault_path: &Option<String>) {
-    let path = vault_path
-        .as_ref()
-        .map(|p| PathBuf::from(shellexpand::tilde(p).to_string()))
-        .unwrap_or_else(default_vault_path);
-
-    if !path.exists() {
-        eprintln!(
-            "{} Vault not found at {}",
-            "error:".red().bold(),
-            path.display()
-        );
-        std::process::exit(1);
-    }
-
-    let size = std::fs::metadata(&path).map(|m| m.len()).unwrap_or(0);
-    println!("{}", "═".repeat(50).dimmed());
-    println!("Vault: {}", path.display().to_string().bold());
-    println!("Size:  {} bytes", size);
-    println!("{}", "═".repeat(50).dimmed());
-    println!("Format: .emberkeys (EMBK v1)");
-    println!("Cipher: AES-256-GCM");
-    println!("KDF:    Argon2id (64MB, 3 iter, 4 parallel)");
-}
-
-fn show_totp(query: &str, vault_path: &Option<String>) {
-    let (vault, _password) = unlock_vault(vault_path);
-
-    let entry = vault
-        .get_entry_by_title(query)
-        .or_else(|_| vault.get_entry_by_url(query))
-        .or_else(|_| {
-            let results = vault.search(query);
-            if results.is_empty() {
-                Err(coalbox_core::CoalboxError::EntryNotFound(query.to_string()))
-            } else {
-                Ok(results.into_iter().next().unwrap())
-            }
-        });
-
-    match entry {
-        Ok(entry) => {
-            if let Some(ref totp_secret) = entry.totp_secret {
-                match TotpConfig::from_secret(totp_secret) {
-                    Ok(config) => {
-                        let code = config.generate_current();
-                        println!("{}", entry.title.bold());
-                        println!();
-                        println!(
-                            "  TOTP: {} ({}s remaining)",
-                            code.code.bold().green(),
-                            code.remaining
-                        );
-                    }
-                    Err(e) => {
-                        eprintln!("{} Invalid TOTP secret: {}", "error:".red().bold(), e);
-                        std::process::exit(1);
-                    }
-                }
-            } else {
-                eprintln!("{} No TOTP configured for this entry", "error:".red().bold());
-                std::process::exit(1);
-            }
-        }
-        Err(e) => {
-            eprintln!("{} {}", "error:".red().bold(), e);
-            std::process::exit(1);
-        }
-    }
-}
-
-fn audit_vault(vault_path: &Option<String>) {
-    let (vault, _password) = unlock_vault(vault_path);
-
-    println!("{}", "Checking passwords against HaveIBeenPwned...".dimmed());
-    println!();
-
-    match vault.list_entries() {
-        Ok(entries) => {
-            match audit_passwords(&entries) {
-                Ok(result) => {
-                    println!("Vault audit complete:");
-                    println!("  Total entries:       {}", result.total_entries);
-                    println!(
-                        "  Entries with pass:   {}",
-                        result.entries_with_passwords
-                    );
-                    println!();
-
-                    if result.breached_entries.is_empty() {
-                        println!(
-                            "{} No breached passwords found!",
-                            "✓".green().bold()
-                        );
-                    } else {
-                        println!(
-                            "{} {} breached passwords found:",
-                            "⚠".red().bold(),
-                            result.breached_entries.len()
-                        );
-                        println!();
-                        for entry in &result.breached_entries {
-                            println!(
-                                "  {} {} — seen {} times in data breaches",
-                                entry.title.bold(),
-                                entry.entry_id.to_string()[..8].dimmed(),
-                                entry.breach_count.to_string().red()
-                            );
-                        }
-                    }
-                }
-                Err(e) => {
-                    eprintln!("{} Audit failed: {}", "error:".red().bold(), e);
-                    std::process::exit(1);
-                }
-            }
-        }
-        Err(e) => {
-            eprintln!("{} {}", "error:".red().bold(), e);
-            std::process::exit(1);
-        }
-    }
-}
-
-fn check_single_password(password: Option<String>) {
-    let pass = match password {
-        Some(p) => {
-            if p == "-" {
-                let mut input = String::new();
-                std::io::stdin()
-                    .read_line(&mut input)
-                    .expect("Failed to read from stdin");
-                input.trim().to_string()
-            } else {
-                p
-            }
-        }
-        None => prompt_password("Enter password to check: "),
-    };
-
-    match check_password(&pass) {
-        Ok(result) => {
-            if result.breached {
-                println!(
-                    "{} Password found in {} data breaches!",
-                    "⚠".red().bold(),
-                    result.count.to_string().red().bold()
-                );
-                println!("  Do not use this password.");
-            } else {
-                println!(
-                    "{} Password not found in any data breaches.",
-                    "✓".green().bold()
-                );
-            }
-        }
-        Err(e) => {
-            eprintln!("{} Breach check failed: {}", "error:".red().bold(), e);
-            std::process::exit(1);
-        }
-    }
-}
-
-fn parse_import_format(format: &str) -> ImportFormat {
-    match format.to_lowercase().as_str() {
-        "csv" => ImportFormat::Csv,
-        "bitwarden" | "bw" => ImportFormat::BitwardenJson,
-        "keepass" | "kpx" => ImportFormat::KeePassXml,
-        "1password" | "1pux" => ImportFormat::OnePassword1Pux,
-        "auto" => ImportFormat::Auto,
-        _ => ImportFormat::Auto,
-    }
-}
-
-fn import_entries(file: &str, format: &str, vault_path: &Option<String>) {
-    let path = PathBuf::from(shellexpand::tilde(file).to_string());
-
-    if !path.exists() {
-        eprintln!(
-            "{} File not found: {}",
-            "error:".red().bold(),
-            path.display()
-        );
-        std::process::exit(1);
-    }
-
-    let fmt = parse_import_format(format);
-    let detected_fmt = if matches!(fmt, ImportFormat::Auto) {
-        ImportFormat::detect(&path)
-    } else {
-        fmt.clone()
-    };
-
-    println!(
-        "{} Importing from {} (format: {:?})...",
-        "→".cyan(),
-        path.display(),
-        detected_fmt
-    );
-
-    let result = match import_file(&path, fmt) {
-        Ok(r) => r,
-        Err(e) => {
-            eprintln!("{} Import failed: {}", "error:".red().bold(), e);
-            std::process::exit(1);
-        }
-    };
-
-    if result.entries.is_empty() {
-        eprintln!(
-            "{} No entries found in import file",
-            "warning:".yellow().bold()
-        );
-        return;
-    }
-
-    println!(
-        "  {} entries parsed",
-        result.entries.len().to_string().green().bold()
-    );
-    if result.skipped > 0 {
-        println!("  {} rows skipped", result.skipped);
-    }
-    for err in &result.errors {
-        println!("  {}: {}", "error:".red(), err);
-    }
-    println!();
-
-    let (mut vault, password) = unlock_vault(vault_path);
-
-    let existing = vault
-        .list_entries()
-        .unwrap_or_default()
-        .into_iter()
-        .map(|e| e.title.to_lowercase())
-        .collect::<Vec<_>>();
-
-    let mut imported = 0;
-    for entry in result.entries {
-        if existing.contains(&entry.title.to_lowercase()) {
-            println!(
-                "  {} {} (duplicate, skipped)",
-                "⊘".yellow(),
-                entry.title
-            );
-            continue;
-        }
-        match vault.add_entry(entry.clone()) {
-            Ok(_) => {
-                println!("  {} {}", "✓".green(), entry.title);
-                imported += 1;
-            }
-            Err(e) => {
-                println!("  {} {} — {}", "✗".red(), entry.title, e);
-            }
-        }
-    }
-
-    if imported > 0 {
-        if let Err(e) = vault.save(&password) {
-            eprintln!("{} Failed to save vault: {}", "error:".red().bold(), e);
-            std::process::exit(1);
-        }
-        println!(
-            "\n{} Imported {} entries",
-            "✓".green().bold(),
-            imported.to_string().green().bold()
-        );
-    }
-}
-
-fn export_entries(file: &str, vault_path: &Option<String>) {
-    let (vault, _password) = unlock_vault(vault_path);
-
-    let entries = match vault.list_entries() {
-        Ok(e) => e,
-        Err(e) => {
-            eprintln!("{} Failed to list entries: {}", "error:".red().bold(), e);
-            std::process::exit(1);
-        }
-    };
-
-    let path = PathBuf::from(shellexpand::tilde(file).to_string());
-
-    if let Some(parent) = path.parent()
-        && !parent.exists()
-    {
-        std::fs::create_dir_all(parent).expect("Failed to create output directory");
-    }
-
-    match export_file(&entries, &path) {
-        Ok(()) => {
-            println!(
-                "{} Exported {} entries to {}",
-                "✓".green().bold(),
-                entries.len().to_string().green().bold(),
-                path.display()
-            );
-        }
-        Err(e) => {
-            eprintln!("{} Export failed: {}", "error:".red().bold(), e);
-            std::process::exit(1);
-        }
-    }
-}
+// ── Main ─────────────────────────────────────────────────────────────
 
 fn main() {
     let cli = Cli::parse();
+    let json = cli.json;
+    let quiet = cli.quiet;
 
     match cli.command {
-        Commands::Create { path } => create_vault(&path),
-        Commands::Get { query, vault } => get_entry(&query, &vault),
-        Commands::List { vault } => list_entries(&vault),
+        Commands::Create { path } => {
+            let c = Cli { json, quiet, command: Commands::Create { path: path.clone() } };
+            create_vault(&c, &path);
+        }
+        Commands::Get {
+            query,
+            vault,
+            field,
+        } => {
+            let c = Cli { json, quiet, command: Commands::Get { query: query.clone(), vault: vault.clone(), field: field.clone() } };
+            get_entry(&c, &query, &vault, &field);
+        }
+        Commands::List {
+            vault,
+            tag,
+            entry_type,
+        } => {
+            let c = Cli { json, quiet, command: Commands::List { vault: vault.clone(), tag: tag.clone(), entry_type: entry_type.clone() } };
+            list_entries(&c, &vault, &tag, &entry_type);
+        }
         Commands::Generate {
             passphrase,
             length,
@@ -787,22 +952,37 @@ fn main() {
             lowercase,
             numbers,
             symbols,
-        } => handle_generate(
-            passphrase, length, words, separator, capitalize, number, uppercase, lowercase,
-            numbers, symbols,
-        ),
-        Commands::Lock => {
-            eprintln!(
-                "{} Daemon mode not yet implemented",
-                "todo:".yellow().bold()
-            );
-            std::process::exit(1);
+        } => {
+            let c = Cli { json, quiet, command: Commands::Generate { passphrase, length, words, separator: separator.clone(), capitalize, number, uppercase, lowercase, numbers, symbols } };
+            handle_generate(&c, passphrase, length, words, separator, capitalize, number, uppercase, lowercase, numbers, symbols);
         }
-        Commands::Info { vault } => show_info(&vault),
-        Commands::Totp { query, vault } => show_totp(&query, &vault),
-        Commands::Audit { vault } => audit_vault(&vault),
-        Commands::Check { password } => check_single_password(password),
-        Commands::Import { file, format, vault } => import_entries(&file, &format, &vault),
-        Commands::Export { file, vault } => export_entries(&file, &vault),
+        Commands::Lock => {
+            let c = Cli { json, quiet, command: Commands::Lock };
+            exit_error(&c, "Daemon mode not yet implemented");
+        }
+        Commands::Info { vault } => {
+            let c = Cli { json, quiet, command: Commands::Info { vault: vault.clone() } };
+            show_info(&c, &vault);
+        }
+        Commands::Totp { query, vault } => {
+            let c = Cli { json, quiet, command: Commands::Totp { query: query.clone(), vault: vault.clone() } };
+            show_totp(&c, &query, &vault);
+        }
+        Commands::Audit { vault } => {
+            let c = Cli { json, quiet, command: Commands::Audit { vault: vault.clone() } };
+            audit_vault(&c, &vault);
+        }
+        Commands::Check { password } => {
+            let c = Cli { json, quiet, command: Commands::Check { password: password.clone() } };
+            check_single_password(&c, password);
+        }
+        Commands::Import { file, format, vault } => {
+            let c = Cli { json, quiet, command: Commands::Import { file: file.clone(), format: format.clone(), vault: vault.clone() } };
+            import_entries(&c, &file, &format, &vault);
+        }
+        Commands::Export { file, vault } => {
+            let c = Cli { json, quiet, command: Commands::Export { file: file.clone(), vault: vault.clone() } };
+            export_entries(&c, &file, &vault);
+        }
     }
 }

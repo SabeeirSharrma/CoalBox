@@ -75,6 +75,10 @@ coalbox import ~/bitwarden.json -f bitwarden -v ~/vault.emberkeys
 
 # Export vault to JSON
 coalbox export ~/backup.json -v ~/vault.emberkeys
+
+# JSON output for scripting
+coalbox list --json | jq '.[].title'
+coalbox get github --field password --json
 ```
 
 ## Features
@@ -92,6 +96,9 @@ coalbox export ~/backup.json -v ~/vault.emberkeys
 - **Breach checking** — HaveIBeenPwned k-anonymity, vault audit
 - **Import** — CSV, Bitwarden JSON, KeePass XML, 1Password 1PUX
 - **Export** — plaintext JSON backup
+- **JSON output** — `--json` flag for all commands, scripting-friendly
+- **Field extraction** — `get --field password` for single values
+- **Entry filtering** — `list --tag work --type login`
 
 ## Vault Format
 

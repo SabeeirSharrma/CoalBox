@@ -54,6 +54,14 @@ Coalbox is a password manager that runs entirely on your local machine. It store
 - Search across all entries
 - Password history (previous versions retained)
 
+### CLI & Scripting
+
+- JSON output for all commands (`--json`)
+- Quiet mode (`--quiet`) for minimal output
+- Field extraction (`get --field password`)
+- Entry filtering (`list --tag work --type login`)
+- Consistent exit codes (0 success, 1 error)
+
 ### TOTP & Security
 
 - TOTP code generation (RFC 6238, SHA-1/SHA-256)

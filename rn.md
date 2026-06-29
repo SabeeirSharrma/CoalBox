@@ -1,15 +1,12 @@
-# v0.4.0 — Import / Export
+# v0.5.0 — CLI
 
 ## What's new
 
-- **Import from CSV** — flexible column mapping (name/title, username/user/login/email, password/pass/pwd, url/website/site/link, notes/note/comment)
-- **Import from Bitwarden JSON** — full vault export support, skips non-login items
-- **Import from KeePass XML** — parses exported KeePass XML format
-- **Import from 1Password 1PUX** — extracts from 1Password export archives (.zip)
-- **Export to plaintext JSON** — full entry data, human-readable
-- **Auto-format detection** — picks format from file extension
-- **Duplicate detection** — skips entries with existing titles during import
-- **CLI commands** — `import`, `export`
+- **JSON output** — `--json` flag for all commands, machine-readable format
+- **Quiet mode** — `--quiet` / `-q` suppresses non-essential output
+- **Field extraction** — `get --field password` to grab a single value
+- **Entry filtering** — `list --tag work --type login`
+- **Consistent exit codes** — 0 on success, 1 on error
 
 ## What's not in this release
 

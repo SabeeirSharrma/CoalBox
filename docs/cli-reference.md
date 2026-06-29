@@ -39,18 +39,26 @@ coalbox create ~/my-vault.emberkeys
 Get an entry by title or URL.
 
 ```bash
-coalbox get <QUERY> [-v <VAULT>]
+coalbox get <QUERY> [-v <VAULT>] [-f <FIELD>]
 ```
 
 | Argument | Description |
 | --- | --- |
 | `QUERY` | Entry title, URL, or search term |
 | `-v, --vault` | Vault file path |
+| `-f, --field` | Extract a single field (title, username, password, url, totp, notes) |
 
-**Example:**
+**Examples:**
 
 ```bash
+# Full entry display
 coalbox get github -v ~/vault.emberkeys
+
+# Just the password (great for scripting)
+coalbox get github -f password
+
+# JSON output for a single field
+coalbox get github --field password --json
 ```
 
 ---
@@ -60,17 +68,29 @@ coalbox get github -v ~/vault.emberkeys
 List all entries in the vault.
 
 ```bash
-coalbox list [-v <VAULT>]
+coalbox list [-v <VAULT>] [-t <TAG>] [-T <TYPE>]
 ```
 
 | Option | Description |
 | --- | --- |
 | `-v, --vault` | Vault file path |
+| `-t, --tag` | Filter by tag |
+| `-T, --type` | Filter by type (login, note, card, identity) |
 
-**Example:**
+**Examples:**
 
 ```bash
+# List all entries
 coalbox list -v ~/vault.emberkeys
+
+# List only login entries
+coalbox list --type login
+
+# List entries with a specific tag
+coalbox list --tag work
+
+# JSON output for scripting
+coalbox list --json | jq '.[].title'
 ```
 
 ---
@@ -114,6 +134,13 @@ coalbox generate --passphrase
 
 # Generate a 4-word passphrase with dashes, no caps
 coalbox generate --passphrase -w 4 -s "-" --no-capitalize
+
+# JSON output for scripting
+coalbox generate -l 32 --json
+# {"password":"aB3$kL9#mN2@pQ5&rS8!"}
+
+coalbox generate --passphrase --json
+# {"passphrase":"correct horse battery staple"}
 ```
 
 ---
@@ -287,5 +314,7 @@ coalbox export ~/backup.json -v ~/other-vault.emberkeys
 
 | Option | Description |
 | --- | --- |
+| `--json` | Output in JSON format (all commands) |
+| `-q, --quiet` | Suppress non-essential output |
 | `-h, --help` | Print help |
 | `-V, --version` | Print version |
