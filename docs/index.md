@@ -68,6 +68,14 @@ Coalbox is a password manager that runs entirely on your local machine. It store
 - Breach checking via HaveIBeenPwned (k-anonymity)
 - Vault audit for compromised passwords
 
+### WebUI
+
+- localhost web interface (axum, vanilla JS, Tailwind CDN)
+- Full vault management via browser
+- Password generator with live preview
+- TOTP display with countdown timer
+- WebSocket real-time state
+
 ## Quick Start
 
 ```bash
@@ -88,6 +96,9 @@ coalbox list -v ~/vault.emberkeys
 
 # Export vault
 coalbox export ~/backup.json -v ~/vault.emberkeys
+
+# Start the WebUI
+coalbox-web --vault ~/vault.emberkeys
 ```
 
 ## Requirements

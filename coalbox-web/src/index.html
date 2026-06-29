@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-gray-950 text-gray-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coalbox</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        [x-cloak] { display: none !important; }
+    </style>
+</head>
+<body class="h-full">
+    <div id="app" class="h-full flex flex-col">
+
+        <!-- Lock Screen -->
+        <div id="lock-screen" class="flex-1 flex items-center justify-center">
+            <div class="w-full max-w-sm p-8">
+                <div class="text-center mb-8">
+                    <h1 class="text-3xl font-bold text-amber-400">Coalbox</h1>
+                    <p class="text-gray-500 mt-2 text-sm">Local-first password manager</p>
+                </div>
+                <form id="unlock-form" class="space-y-4">
+                    <input
+                        type="password"
+                        id="unlock-password"
+                        placeholder="Master password"
+                        class="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg focus:outline-none focus:border-amber-500 text-gray-100 placeholder-gray-500"
+                        autofocus
+                    >
+                    <button
+                        type="submit"
+                        class="w-full py-3 bg-amber-600 hover:bg-amber-500 rounded-lg font-medium transition-colors"
+                    >Unlock</button>
+                    <p id="unlock-error" class="text-red-400 text-sm text-center hidden"></p>
+                </form>
+            </div>
+        </div>
+
+        <!-- Main UI -->
+        <div id="main-ui" class="flex-1 flex flex-col hidden">
+
+            <!-- Header -->
+            <header class="flex items-center justify-between px-6 py-3 border-b border-gray-800">
+                <h1 class="text-lg font-bold text-amber-400">Coalbox</h1>
+                <div class="flex items-center gap-3">
+                    <span id="entry-count" class="text-sm text-gray-500"></span>
+                    <button id="btn-generate" class="text-sm px-3 py-1 bg-gray-800 hover:bg-gray-700 rounded">Generate</button>
+                    <button id="btn-import" class="text-sm px-3 py-1 bg-gray-800 hover:bg-gray-700 rounded">Import</button>
+                    <button id="btn-lock" class="text-sm px-3 py-1 bg-gray-800 hover:bg-gray-700 rounded text-red-400">Lock</button>
+                </div>
+            </header>
+
+            <div class="flex-1 flex overflow-hidden">
+
+                <!-- Sidebar -->
+                <aside class="w-72 border-r border-gray-800 flex flex-col">
+                    <div class="p-3 border-b border-gray-800">
+                        <input
+                            type="text"
+                            id="search-input"
+                            placeholder="Search..."
+                            class="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded text-sm focus:outline-none focus:border-amber-500"
+                        >
+                    </div>
+                    <div id="entry-list" class="flex-1 overflow-y-auto p-2 space-y-1"></div>
+                    <div class="p-3 border-t border-gray-800">
+                        <button id="btn-add" class="w-full py-2 bg-amber-600 hover:bg-amber-500 rounded text-sm font-medium">+ New Entry</button>
+                    </div>
+                </aside>
+
+                <!-- Content -->
+                <main class="flex-1 overflow-y-auto p-6" id="content-area">
+                    <div class="text-center text-gray-500 mt-20">
+                        <p>Select an entry or create a new one</p>
+                    </div>
+                </main>
+            </div>
+        </div>
+
+        <!-- Modal: Generate -->
+        <div id="modal-generate" class="fixed inset-0 bg-black/60 hidden items-center justify-center z-50">
+            <div class="bg-gray-900 border border-gray-700 rounded-xl w-full max-w-md p-6">
+                <h2 class="text-lg font-bold mb-4">Generate Password</h2>
+                <div class="space-y-4">
+                    <div class="flex gap-2">
+                        <button id="gen-type-password" class="flex-1 py-2 bg-amber-600 rounded text-sm">Password</button>
+                        <button id="gen-type-passphrase" class="flex-1 py-2 bg-gray-800 rounded text-sm">Passphrase</button>
+                    </div>
+                    <div id="gen-password-opts" class="space-y-3">
+                        <label class="flex items-center gap-2 text-sm">
+                            <span>Length:</span>
+                            <input type="number" id="gen-length" value="20" min="8" max="128" class="w-20 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-sm">
+                        </label>
+                    </div>
+                    <div id="gen-passphrase-opts" class="space-y-3 hidden">
+                        <label class="flex items-center gap-2 text-sm">
+                            <span>Words:</span>
+                            <input type="number" id="gen-words" value="6" min="3" max="12" class="w-20 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-sm">
+                        </label>
+                        <label class="flex items-center gap-2 text-sm">
+                            <span>Separator:</span>
+                            <input type="text" id="gen-separator" value=" " class="w-20 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-sm">
+                        </label>
+                        <label class="flex items-center gap-2 text-sm">
+                            <input type="checkbox" id="gen-capitalize" checked> Capitalize
+                        </label>
+                        <label class="flex items-center gap-2 text-sm">
+                            <input type="checkbox" id="gen-number"> Add number
+                        </label>
+                    </div>
+                    <div class="bg-gray-800 p-3 rounded font-mono text-sm break-all" id="gen-result">—</div>
+                    <div class="flex gap-2">
+                        <button id="gen-refresh" class="flex-1 py-2 bg-gray-800 hover:bg-gray-700 rounded text-sm">Regenerate</button>
+                        <button id="gen-copy" class="flex-1 py-2 bg-amber-600 hover:bg-amber-500 rounded text-sm">Copy</button>
+                    </div>
+                </div>
+                <button id="gen-close" class="absolute top-4 right-4 text-gray-500 hover:text-gray-300 text-xl">&times;</button>
+            </div>
+        </div>
+
+        <!-- Modal: Add/Edit Entry -->
+        <div id="modal-entry" class="fixed inset-0 bg-black/60 hidden items-center justify-center z-50">
+            <div class="bg-gray-900 border border-gray-700 rounded-xl w-full max-w-lg p-6">
+                <h2 id="modal-entry-title" class="text-lg font-bold mb-4">New Entry</h2>
+                <form id="entry-form" class="space-y-3">
+                    <input type="hidden" id="entry-id">
+                    <select id="entry-type" class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded text-sm">
+                        <option value="login">Login</option>
+                        <option value="note">Secure Note</option>
+                    </select>
+                    <input type="text" id="entry-title" placeholder="Title" class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded text-sm">
+                    <div id="login-fields">
+                        <input type="text" id="entry-username" placeholder="Username" class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded text-sm mb-3">
+                        <input type="text" id="entry-password" placeholder="Password" class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded text-sm mb-3">
+                        <input type="text" id="entry-url" placeholder="URL" class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded text-sm mb-3">
+                    </div>
+                    <textarea id="entry-notes" placeholder="Notes" rows="3" class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded text-sm"></textarea>
+                    <div class="flex gap-2 pt-2">
+                        <button type="submit" class="flex-1 py-2 bg-amber-600 hover:bg-amber-500 rounded text-sm font-medium">Save</button>
+                        <button type="button" id="entry-cancel" class="flex-1 py-2 bg-gray-800 hover:bg-gray-700 rounded text-sm">Cancel</button>
+                    </div>
+                </form>
+                <button id="entry-modal-close" class="absolute top-4 right-4 text-gray-500 hover:text-gray-300 text-xl">&times;</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // ── State ──────────────────────────────────────────────────────
+    let entries = [];
+    let selectedId = null;
+    let ws = null;
+    let genType = 'password';
+
+    // ── API helpers ────────────────────────────────────────────────
+    const api = {
+        async get(url) {
+            const r = await fetch(url);
+            return r.json();
+        },
+        async post(url, body) {
+            const r = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            return r.json();
+        },
+        async put(url, body) {
+            const r = await fetch(url, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            return r.json();
+        },
+        async del(url) {
+            const r = await fetch(url, { method: 'DELETE' });
+            return r.json();
+        }
+    };
+
+    // ── WebSocket ──────────────────────────────────────────────────
+    function connectWs() {
+        const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+        ws = new WebSocket(`${proto}://${location.host}/ws`);
+        ws.onmessage = (e) => {
+            if (e.data === 'unlock') {
+                loadEntries();
+                showMain();
+            } else if (e.data === 'lock') {
+                showLock();
+            } else if (e.data === 'entries_changed') {
+                loadEntries();
+            }
+        };
+        ws.onclose = () => setTimeout(connectWs, 2000);
+    }
+
+    // ── UI state ───────────────────────────────────────────────────
+    function showLock() {
+        document.getElementById('lock-screen').classList.remove('hidden');
+        document.getElementById('lock-screen').classList.add('flex');
+        document.getElementById('main-ui').classList.add('hidden');
+        document.getElementById('unlock-password').value = '';
+        document.getElementById('unlock-error').classList.add('hidden');
+        entries = [];
+        selectedId = null;
+        renderList();
+    }
+
+    function showMain() {
+        document.getElementById('lock-screen').classList.add('hidden');
+        document.getElementById('lock-screen').classList.remove('flex');
+        document.getElementById('main-ui').classList.remove('hidden');
+    }
+
+    // ── Entries ────────────────────────────────────────────────────
+    async function loadEntries() {
+        const res = await api.get('/api/entries');
+        if (res.ok) {
+            entries = res.data;
+            document.getElementById('entry-count').textContent = `${entries.length} entries`;
+            renderList();
+        }
+    }
+
+    function renderList(filter = '') {
+        const list = document.getElementById('entry-list');
+        const q = filter.toLowerCase();
+        const filtered = entries.filter(e =>
+            e.title.toLowerCase().includes(q) ||
+            (e.username && e.username.toLowerCase().includes(q)) ||
+            (e.url && e.url.toLowerCase().includes(q))
+        );
+
+        list.innerHTML = filtered.map(e => {
+            const icon = { login: '🔑', note: '📝', card: '💳', identity: '👤' }[e.entry_type] || '🔑';
+            const selected = e.id === selectedId ? 'bg-gray-800 border-amber-600' : 'bg-gray-900 border-gray-800 hover:border-gray-700';
+            return `
+                <div class="entry-item p-3 rounded-lg border cursor-pointer ${selected}" data-id="${e.id}">
+                    <div class="flex items-center gap-2">
+                        <span>${icon}</span>
+                        <span class="text-sm font-medium truncate">${esc(e.title)}</span>
+                    </div>
+                    ${e.username ? `<div class="text-xs text-gray-500 truncate mt-1 ml-6">${esc(e.username)}</div>` : ''}
+                </div>
+            `;
+        }).join('');
+
+        list.querySelectorAll('.entry-item').forEach(el => {
+            el.onclick = () => selectEntry(el.dataset.id);
+        });
+    }
+
+    async function selectEntry(id) {
+        selectedId = id;
+        renderList(document.getElementById('search-input').value);
+        const res = await api.get(`/api/entries/${id}`);
+        if (!res.ok) return;
+        const e = res.data;
+        const area = document.getElementById('content-area');
+        const typeLabel = { login: 'Login', note: 'Secure Note', card: 'Payment Card', identity: 'Identity' }[e.entry_type] || 'Entry';
+
+        let html = `
+            <div class="max-w-2xl">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h2 class="text-2xl font-bold">${esc(e.title)}</h2>
+                        <span class="text-sm text-gray-500">${typeLabel}</span>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="editEntry('${e.id}')" class="px-3 py-1 bg-gray-800 hover:bg-gray-700 rounded text-sm">Edit</button>
+                        <button onclick="deleteEntry('${e.id}')" class="px-3 py-1 bg-gray-800 hover:bg-red-900 rounded text-sm text-red-400">Delete</button>
+                    </div>
+                </div>
+        `;
+
+        if (e.username) {
+            html += fieldRow('Username', e.username, 'username');
+        }
+        if (e.password) {
+            html += fieldRow('Password', '•'.repeat(e.password.length), 'password', e.password);
+        }
+        if (e.url) {
+            html += fieldRow('URL', e.url, 'url', null, true);
+        }
+        if (e.notes) {
+            html += `<div class="mb-4"><div class="text-xs text-gray-500 mb-1">Notes</div><div class="text-sm bg-gray-900 p-3 rounded whitespace-pre-wrap">${esc(e.notes)}</div></div>`;
+        }
+        if (e.totp_secret) {
+            html += `
+                <div class="mb-4">
+                    <div class="text-xs text-gray-500 mb-1">TOTP</div>
+                    <div class="flex items-center gap-2">
+                        <span id="totp-code" class="text-2xl font-mono text-amber-400">Loading...</span>
+                        <span id="totp-remaining" class="text-sm text-gray-500"></span>
+                        <button onclick="refreshTotp('${e.id}')" class="text-sm px-2 py-1 bg-gray-800 rounded">Refresh</button>
+                    </div>
+                </div>
+            `;
+            refreshTotp(e.id);
+        }
+
+        html += `
+            <div class="text-xs text-gray-600 mt-6">
+                Created: ${new Date(e.created).toLocaleString()}<br>
+                Modified: ${new Date(e.modified).toLocaleString()}
+            </div>
+        </div>`;
+
+        area.innerHTML = html;
+    }
+
+    function fieldRow(label, display, type, copyVal, isLink) {
+        const copyBtn = copyVal
+            ? `<button onclick="copyText('${esc(copyVal)}')" class="text-xs px-2 py-1 bg-gray-800 rounded hover:bg-gray-700">Copy</button>`
+            : '';
+        const val = isLink
+            ? `<a href="${esc(display)}" target="_blank" class="text-amber-400 hover:underline">${esc(display)}</a>`
+            : `<span class="text-sm">${display}</span>`;
+        return `<div class="mb-4 flex items-center justify-between bg-gray-900 p-3 rounded"><div><div class="text-xs text-gray-500 mb-1">${label}</div>${val}</div>${copyBtn}</div>`;
+    }
+
+    async function refreshTotp(id) {
+        const res = await api.get(`/api/entries/${id}/totp`);
+        if (res.ok) {
+            const codeEl = document.getElementById('totp-code');
+            const remainEl = document.getElementById('totp-remaining');
+            if (codeEl) codeEl.textContent = res.data.code;
+            if (remainEl) remainEl.textContent = `${res.data.remaining}s`;
+        }
+    }
+
+    // ── Copy ───────────────────────────────────────────────────────
+    async function copyText(text) {
+        await navigator.clipboard.writeText(text);
+    }
+
+    // ── Modals ─────────────────────────────────────────────────────
+    function showModal(id) {
+        document.getElementById(id).classList.remove('hidden');
+        document.getElementById(id).classList.add('flex');
+    }
+    function hideModal(id) {
+        document.getElementById(id).classList.add('hidden');
+        document.getElementById(id).classList.remove('flex');
+    }
+
+    // ── Event listeners ────────────────────────────────────────────
+    document.getElementById('unlock-form').onsubmit = async (e) => {
+        e.preventDefault();
+        const pw = document.getElementById('unlock-password').value;
+        const errEl = document.getElementById('unlock-error');
+        const res = await api.post('/api/unlock', { password: pw });
+        if (res.ok) {
+            showMain();
+            await loadEntries();
+        } else {
+            errEl.textContent = res.error || 'Failed to unlock';
+            errEl.classList.remove('hidden');
+        }
+    };
+
+    document.getElementById('btn-lock').onclick = async () => {
+        await api.post('/api/lock');
+        showLock();
+    };
+
+    document.getElementById('search-input').oninput = (e) => {
+        renderList(e.target.value);
+    };
+
+    document.getElementById('btn-generate').onclick = () => {
+        genType = 'password';
+        updateGenType();
+        generatePassword();
+        showModal('modal-generate');
+    };
+
+    document.getElementById('gen-type-password').onclick = () => { genType = 'password'; updateGenType(); generatePassword(); };
+    document.getElementById('gen-type-passphrase').onclick = () => { genType = 'passphrase'; updateGenType(); generatePassword(); };
+    document.getElementById('gen-refresh').onclick = generatePassword;
+    document.getElementById('gen-close').onclick = () => hideModal('modal-generate');
+    document.getElementById('gen-copy').onclick = async () => {
+        const text = document.getElementById('gen-result').textContent;
+        if (text !== '—') await copyText(text);
+    };
+
+    function updateGenType() {
+        document.getElementById('gen-type-password').className = `flex-1 py-2 rounded text-sm ${genType === 'password' ? 'bg-amber-600' : 'bg-gray-800'}`;
+        document.getElementById('gen-type-passphrase').className = `flex-1 py-2 rounded text-sm ${genType === 'passphrase' ? 'bg-amber-600' : 'bg-gray-800'}`;
+        document.getElementById('gen-password-opts').classList.toggle('hidden', genType !== 'password');
+        document.getElementById('gen-passphrase-opts').classList.toggle('hidden', genType !== 'passphrase');
+    }
+
+    async function generatePassword() {
+        const body = genType === 'passphrase'
+            ? { passphrase: true, words: +document.getElementById('gen-words').value, separator: document.getElementById('gen-separator').value, capitalize: document.getElementById('gen-capitalize').checked, number: document.getElementById('gen-number').checked }
+            : { passphrase: false, length: +document.getElementById('gen-length').value };
+        const res = await api.post('/api/generate', body);
+        if (res.ok) document.getElementById('gen-result').textContent = res.data.password;
+    }
+
+    // ── Entry CRUD modals ──────────────────────────────────────────
+    document.getElementById('btn-add').onclick = () => {
+        document.getElementById('modal-entry-title').textContent = 'New Entry';
+        document.getElementById('entry-id').value = '';
+        document.getElementById('entry-form').reset();
+        document.getElementById('entry-type').value = 'login';
+        updateEntryTypeFields();
+        showModal('modal-entry');
+    };
+
+    document.getElementById('entry-type').onchange = updateEntryTypeFields;
+    document.getElementById('entry-cancel').onclick = () => hideModal('modal-entry');
+    document.getElementById('entry-modal-close').onclick = () => hideModal('modal-entry');
+
+    function updateEntryTypeFields() {
+        document.getElementById('login-fields').classList.toggle('hidden', document.getElementById('entry-type').value === 'note');
+    }
+
+    document.getElementById('entry-form').onsubmit = async (e) => {
+        e.preventDefault();
+        const id = document.getElementById('entry-id').value;
+        const body = {
+            title: document.getElementById('entry-title').value,
+            username: document.getElementById('entry-username').value,
+            password: document.getElementById('entry-password').value,
+            url: document.getElementById('entry-url').value,
+            notes: document.getElementById('entry-notes').value,
+            entry_type: document.getElementById('entry-type').value,
+        };
+
+        if (id) {
+            await api.put(`/api/entries/${id}`, body);
+        } else {
+            await api.post('/api/entries', body);
+        }
+        hideModal('modal-entry');
+        await loadEntries();
+    };
+
+    window.editEntry = async (id) => {
+        const res = await api.get(`/api/entries/${id}`);
+        if (!res.ok) return;
+        const e = res.data;
+        document.getElementById('modal-entry-title').textContent = 'Edit Entry';
+        document.getElementById('entry-id').value = e.id;
+        document.getElementById('entry-type').value = e.entry_type;
+        document.getElementById('entry-title').value = e.title;
+        document.getElementById('entry-username').value = e.username || '';
+        document.getElementById('entry-password').value = e.password || '';
+        document.getElementById('entry-url').value = e.url || '';
+        document.getElementById('entry-notes').value = e.notes || '';
+        updateEntryTypeFields();
+        showModal('modal-entry');
+    };
+
+    window.deleteEntry = async (id) => {
+        if (!confirm('Delete this entry?')) return;
+        await api.del(`/api/entries/${id}`);
+        selectedId = null;
+        document.getElementById('content-area').innerHTML = '<div class="text-center text-gray-500 mt-20"><p>Select an entry or create a new one</p></div>';
+        await loadEntries();
+    };
+
+    window.copyText = copyText;
+    window.refreshTotp = refreshTotp;
+
+    // ── Init ───────────────────────────────────────────────────────
+    connectWs();
+    </script>
+</body>
+</html>

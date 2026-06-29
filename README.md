@@ -79,6 +79,9 @@ coalbox export ~/backup.json -v ~/vault.emberkeys
 # JSON output for scripting
 coalbox list --json | jq '.[].title'
 coalbox get github --field password --json
+
+# Start the WebUI
+coalbox-web --vault ~/vault.emberkeys
 ```
 
 ## Features
@@ -99,6 +102,7 @@ coalbox get github --field password --json
 - **JSON output** — `--json` flag for all commands, scripting-friendly
 - **Field extraction** — `get --field password` for single values
 - **Entry filtering** — `list --tag work --type login`
+- **WebUI** — localhost web interface, full vault management in the browser
 
 ## Vault Format
 

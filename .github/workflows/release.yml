@@ -42,16 +42,19 @@ jobs:
       - name: Build release
         run: cargo build --release --target ${{ matrix.target }}
 
-      - name: Prepare artifact
+      - name: Prepare artifacts
         run: |
-          cp target/${{ matrix.target }}/release/coalbox ${{ matrix.artifact }}
-          chmod +x ${{ matrix.artifact }}
+          cp target/${{ matrix.target }}/release/coalbox ${{ matrix.artifact }}-cli
+          cp target/${{ matrix.target }}/release/coalbox-web ${{ matrix.artifact }}-web
+          chmod +x ${{ matrix.artifact }}-cli ${{ matrix.artifact }}-web
 
-      - name: Upload artifact
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact }}
-          path: ${{ matrix.artifact }}
+          path: |
+            ${{ matrix.artifact }}-cli
+            ${{ matrix.artifact }}-web
 
   release:
     name: Create Release
@@ -81,7 +84,9 @@ jobs:
 
             ${{ github.event.head_commit.message }}
           files: |
-            coalbox-x86_64-linux/coalbox-x86_64-linux
+            coalbox-x86_64-linux/coalbox-x86_64-linux-cli
+            coalbox-x86_64-linux/coalbox-x86_64-linux-web
             coalbox-x86_64-linux/sha256sums.txt
-            coalbox-aarch64-linux/coalbox-aarch64-linux
+            coalbox-aarch64-linux/coalbox-aarch64-linux-cli
+            coalbox-aarch64-linux/coalbox-aarch64-linux-web
             coalbox-aarch64-linux/sha256sums.txt

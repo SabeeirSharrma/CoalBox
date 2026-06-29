@@ -1,0 +1,25 @@
+[package]
+name = "coalbox-web"
+version = "0.6.0"
+edition = "2024"
+description = "Coalbox WebUI — localhost web interface"
+
+[[bin]]
+name = "coalbox-web"
+path = "src/main.rs"
+
+[dependencies]
+coalbox-core = { path = "../coalbox-core" }
+axum = { version = "0.8", features = ["ws"] }
+tokio = { version = "1", features = ["full"] }
+tower-http = { version = "0.6", features = ["cors", "trace"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tracing = "0.1"
+tracing-subscriber = "0.3"
+rand = "0.8"
+clap = { version = "4", features = ["derive"] }
+chrono = "0.4"
+shellexpand = "3"
+uuid = { version = "1", features = ["v4"] }
+open = "5"

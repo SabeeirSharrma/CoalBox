@@ -1,16 +1,29 @@
-# v0.5.0 — CLI
+# v0.6.0 — WebUI
 
 ## What's new
 
-- **JSON output** — `--json` flag for all commands, machine-readable format
-- **Quiet mode** — `--quiet` / `-q` suppresses non-essential output
-- **Field extraction** — `get --field password` to grab a single value
-- **Entry filtering** — `list --tag work --type login`
-- **Consistent exit codes** — 0 on success, 1 on error
+- **WebUI** — localhost web interface at `http://127.0.0.1:<port>`
+- **axum server** — lightweight async Rust web framework
+- **REST API** — full CRUD for entries, search, generate, TOTP
+- **WebSocket** — real-time lock/unlock/entries notifications
+- **Vanilla frontend** — HTML/CSS/JS, Tailwind CDN, zero build step
+- **Single binary** — `coalbox-web` with embedded frontend
+
+## Usage
+
+```bash
+# Start the WebUI
+coalbox-web --vault ~/vault.emberkeys
+
+# Custom port
+coalbox-web --port 3000
+
+# Don't open browser
+coalbox-web --no-open
+```
 
 ## What's not in this release
 
-- WebUI (v0.6)
 - Ember Browser integration (v0.7)
 
 ## Build from source
@@ -19,6 +32,7 @@
 git clone https://github.com/SabeeirSharrma/coalbox.git
 cd coalbox
 cargo build --release
+# binaries at target/release/coalbox and target/release/coalbox-web
 ```
 
 Requires Rust 1.85+.
