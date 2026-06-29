@@ -66,6 +66,15 @@ coalbox check "password123"
 
 # Show vault info
 coalbox info -v ~/vault.emberkeys
+
+# Import from CSV
+coalbox import ~/export.csv -v ~/vault.emberkeys
+
+# Import from Bitwarden
+coalbox import ~/bitwarden.json -f bitwarden -v ~/vault.emberkeys
+
+# Export vault to JSON
+coalbox export ~/backup.json -v ~/vault.emberkeys
 ```
 
 ## Features
@@ -81,6 +90,8 @@ coalbox info -v ~/vault.emberkeys
 - **Password history** — previous passwords retained on update
 - **TOTP codes** — RFC 6238, generate 2FA codes from the vault
 - **Breach checking** — HaveIBeenPwned k-anonymity, vault audit
+- **Import** — CSV, Bitwarden JSON, KeePass XML, 1Password 1PUX
+- **Export** — plaintext JSON backup
 
 ## Vault Format
 

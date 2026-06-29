@@ -43,4 +43,7 @@ pub enum CoalboxError {
 
     #[error("Breach check error: {0}")]
     BreachCheck(String),
+
+    #[error("Import error: {0}")]
+    Import(String),
 }

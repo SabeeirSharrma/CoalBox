@@ -41,12 +41,24 @@ Coalbox is a password manager that runs entirely on your local machine. It store
 - **Character mode** — configurable length, uppercase, lowercase, numbers, symbols
 - **Passphrase mode** — EFF large wordlist (7776 words), configurable word count, separator, capitalization
 
+### Import / Export
+
+- Import from CSV, Bitwarden JSON, KeePass XML, 1Password 1PUX
+- Export to plaintext JSON
+- Auto-format detection, duplicate detection
+
 ### Entry Management
 
 - Custom fields (text, hidden, URL, date)
 - Tags and favourites
 - Search across all entries
 - Password history (previous versions retained)
+
+### TOTP & Security
+
+- TOTP code generation (RFC 6238, SHA-1/SHA-256)
+- Breach checking via HaveIBeenPwned (k-anonymity)
+- Vault audit for compromised passwords
 
 ## Quick Start
 
@@ -60,8 +72,14 @@ coalbox generate -l 32
 # Generate a passphrase
 coalbox generate --passphrase --words 6
 
+# Import from Bitwarden
+coalbox import ~/bitwarden.json -f bitwarden -v ~/vault.emberkeys
+
 # List entries
 coalbox list -v ~/vault.emberkeys
+
+# Export vault
+coalbox export ~/backup.json -v ~/vault.emberkeys
 ```
 
 ## Requirements

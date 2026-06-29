@@ -1,17 +1,18 @@
-# v0.3.0 — TOTP + Breach Check
+# v0.4.0 — Import / Export
 
 ## What's new
 
-- **TOTP code generation** — RFC 6238, SHA-1/SHA-256 support, 6-digit codes
-- **Base32 secret decoding** — import TOTP secrets from authenticator apps
-- **Breach checking** — HaveIBeenPwned k-anonymity (only hash prefix leaves device)
-- **Vault audit** — scan all entries for breached passwords
-- **Single password check** — check any password against HIBP
-- **CLI commands** — `totp`, `audit`, `check`
+- **Import from CSV** — flexible column mapping (name/title, username/user/login/email, password/pass/pwd, url/website/site/link, notes/note/comment)
+- **Import from Bitwarden JSON** — full vault export support, skips non-login items
+- **Import from KeePass XML** — parses exported KeePass XML format
+- **Import from 1Password 1PUX** — extracts from 1Password export archives (.zip)
+- **Export to plaintext JSON** — full entry data, human-readable
+- **Auto-format detection** — picks format from file extension
+- **Duplicate detection** — skips entries with existing titles during import
+- **CLI commands** — `import`, `export`
 
 ## What's not in this release
 
-- Import/export (v0.4)
 - WebUI (v0.6)
 - Ember Browser integration (v0.7)
 

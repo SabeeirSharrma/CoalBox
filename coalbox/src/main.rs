@@ -3,12 +3,12 @@ use colored::Colorize;
 use std::path::PathBuf;
 
 use coalbox_core::{
-    audit_passwords, check_password, generate_passphrase, generate_password, Entry,
-    PassphraseConfig, PasswordConfig, TotpConfig, Vault,
+    audit_passwords, check_password, export_file, generate_passphrase, generate_password,
+    import_file, Entry, ImportFormat, PassphraseConfig, PasswordConfig, TotpConfig, Vault,
 };
 
 #[derive(Parser)]
-#[command(name = "coalbox", version = "0.3.0", about = "Coalbox password manager")]
+#[command(name = "coalbox", version = "0.4.0", about = "Coalbox password manager")]
 struct Cli {
     #[command(subcommand)]
     command: Commands,
@@ -114,6 +114,30 @@ enum Commands {
     Check {
         /// Password to check (or - to read from stdin)
         password: Option<String>,
+    },
+
+    /// Import entries from a file
+    Import {
+        /// File to import (csv, json, xml, 1pux)
+        file: String,
+
+        /// Import format (csv, bitwarden, keepass, 1password, auto)
+        #[arg(short, long, default_value = "auto")]
+        format: String,
+
+        /// Vault file path
+        #[arg(short, long)]
+        vault: Option<String>,
+    },
+
+    /// Export entries to a file
+    Export {
+        /// Output file path
+        file: String,
+
+        /// Vault file path
+        #[arg(short, long)]
+        vault: Option<String>,
     },
 }
 
@@ -602,6 +626,149 @@ fn check_single_password(password: Option<String>) {
     }
 }
 
+fn parse_import_format(format: &str) -> ImportFormat {
+    match format.to_lowercase().as_str() {
+        "csv" => ImportFormat::Csv,
+        "bitwarden" | "bw" => ImportFormat::BitwardenJson,
+        "keepass" | "kpx" => ImportFormat::KeePassXml,
+        "1password" | "1pux" => ImportFormat::OnePassword1Pux,
+        "auto" => ImportFormat::Auto,
+        _ => ImportFormat::Auto,
+    }
+}
+
+fn import_entries(file: &str, format: &str, vault_path: &Option<String>) {
+    let path = PathBuf::from(shellexpand::tilde(file).to_string());
+
+    if !path.exists() {
+        eprintln!(
+            "{} File not found: {}",
+            "error:".red().bold(),
+            path.display()
+        );
+        std::process::exit(1);
+    }
+
+    let fmt = parse_import_format(format);
+    let detected_fmt = if matches!(fmt, ImportFormat::Auto) {
+        ImportFormat::detect(&path)
+    } else {
+        fmt.clone()
+    };
+
+    println!(
+        "{} Importing from {} (format: {:?})...",
+        "→".cyan(),
+        path.display(),
+        detected_fmt
+    );
+
+    let result = match import_file(&path, fmt) {
+        Ok(r) => r,
+        Err(e) => {
+            eprintln!("{} Import failed: {}", "error:".red().bold(), e);
+            std::process::exit(1);
+        }
+    };
+
+    if result.entries.is_empty() {
+        eprintln!(
+            "{} No entries found in import file",
+            "warning:".yellow().bold()
+        );
+        return;
+    }
+
+    println!(
+        "  {} entries parsed",
+        result.entries.len().to_string().green().bold()
+    );
+    if result.skipped > 0 {
+        println!("  {} rows skipped", result.skipped);
+    }
+    for err in &result.errors {
+        println!("  {}: {}", "error:".red(), err);
+    }
+    println!();
+
+    let (mut vault, password) = unlock_vault(vault_path);
+
+    let existing = vault
+        .list_entries()
+        .unwrap_or_default()
+        .into_iter()
+        .map(|e| e.title.to_lowercase())
+        .collect::<Vec<_>>();
+
+    let mut imported = 0;
+    for entry in result.entries {
+        if existing.contains(&entry.title.to_lowercase()) {
+            println!(
+                "  {} {} (duplicate, skipped)",
+                "⊘".yellow(),
+                entry.title
+            );
+            continue;
+        }
+        match vault.add_entry(entry.clone()) {
+            Ok(_) => {
+                println!("  {} {}", "✓".green(), entry.title);
+                imported += 1;
+            }
+            Err(e) => {
+                println!("  {} {} — {}", "✗".red(), entry.title, e);
+            }
+        }
+    }
+
+    if imported > 0 {
+        if let Err(e) = vault.save(&password) {
+            eprintln!("{} Failed to save vault: {}", "error:".red().bold(), e);
+            std::process::exit(1);
+        }
+        println!(
+            "\n{} Imported {} entries",
+            "✓".green().bold(),
+            imported.to_string().green().bold()
+        );
+    }
+}
+
+fn export_entries(file: &str, vault_path: &Option<String>) {
+    let (vault, _password) = unlock_vault(vault_path);
+
+    let entries = match vault.list_entries() {
+        Ok(e) => e,
+        Err(e) => {
+            eprintln!("{} Failed to list entries: {}", "error:".red().bold(), e);
+            std::process::exit(1);
+        }
+    };
+
+    let path = PathBuf::from(shellexpand::tilde(file).to_string());
+
+    if let Some(parent) = path.parent()
+        && !parent.exists()
+    {
+        std::fs::create_dir_all(parent).expect("Failed to create output directory");
+    }
+
+    match export_file(&entries, &path) {
+        Ok(()) => {
+            println!(
+                "{} Exported {} entries to {}",
+                "✓".green().bold(),
+                entries.len().to_string().green().bold(),
+                path.display()
+            );
+        }
+        Err(e) => {
+            eprintln!("{} Export failed: {}", "error:".red().bold(), e);
+            std::process::exit(1);
+        }
+    }
+}
+
 fn main() {
     let cli = Cli::parse();
 
@@ -635,5 +802,7 @@ fn main() {
         Commands::Totp { query, vault } => show_totp(&query, &vault),
         Commands::Audit { vault } => audit_vault(&vault),
         Commands::Check { password } => check_single_password(password),
+        Commands::Import { file, format, vault } => import_entries(&file, &format, &vault),
+        Commands::Export { file, vault } => export_entries(&file, &vault),
     }
 }

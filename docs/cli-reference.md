@@ -220,6 +220,69 @@ coalbox check "password123"
 
 ---
 
+### import
+
+Import entries from an external file.
+
+```bash
+coalbox import <FILE> [-f <FORMAT>] [-v <VAULT>]
+```
+
+| Argument | Default | Description |
+| --- | --- | --- |
+| `FILE` | — | File to import (required) |
+| `-f, --format` | `auto` | Format: `csv`, `bitwarden`, `keepass`, `1password`, `auto` |
+| `-v, --vault` | default | Vault file path |
+
+**Supported formats:**
+
+| Format | Extension | Description |
+| --- | --- | --- |
+| CSV | `.csv` | Flexible column mapping (name/title, user/username/login/email, pass/password/pwd, url/website/site, notes/note/comment) |
+| Bitwarden JSON | `.json` | Full Bitwarden vault export |
+| KeePass XML | `.xml` | KeePass XML export |
+| 1Password 1PUX | `.1pux` | 1Password export archive |
+
+**Examples:**
+
+```bash
+# Import from CSV (auto-detect format)
+coalbox import ~/export.csv
+
+# Import from Bitwarden JSON
+coalbox import ~/bitwarden.json -f bitwarden
+
+# Import into a specific vault
+coalbox import ~/keepass.xml -f keepass -v ~/other-vault.emberkeys
+```
+
+---
+
+### export
+
+Export all entries to a plaintext JSON file.
+
+```bash
+coalbox export <FILE> [-v <VAULT>]
+```
+
+| Argument | Description |
+| --- | --- |
+| `FILE` | Output file path |
+| `-v, --vault` | Vault file path |
+
+**Example:**
+
+```bash
+# Export vault to JSON
+coalbox export ~/backup.json
+
+# Export from a specific vault
+coalbox export ~/backup.json -v ~/other-vault.emberkeys
+```
+
+---
+
 ## Global Options
 
 | Option | Description |

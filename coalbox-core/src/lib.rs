@@ -4,6 +4,7 @@ pub mod entry;
 pub mod error;
 pub mod format;
 pub mod generator;
+pub mod import_export;
 pub mod totp;
 pub mod vault;
 
@@ -11,5 +12,6 @@ pub use breach::{audit_passwords, check_password, AuditResult, BreachResult};
 pub use entry::{CardData, CustomField, Entry, EntryId, EntryType, FieldType, IdentityData};
 pub use error::CoalboxError;
 pub use generator::{generate_passphrase, generate_password, PassphraseConfig, PasswordConfig};
+pub use import_export::{export_file, export_json, import_file, ImportFormat, ImportResult};
 pub use totp::{TotpAlgorithm, TotpCode, TotpConfig};
 pub use vault::Vault;
