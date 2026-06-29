@@ -71,15 +71,23 @@ coalbox/
 │       ├── entry.rs      # Entry types (Login, Note, Card, Identity)
 │       ├── error.rs      # Error types
 │       ├── format.rs     # .emberkeys binary format
+│       ├── generator.rs  # Password/passphrase generator
 │       └── vault.rs      # Vault operations
 ├── coalbox/              # CLI binary crate
 │   ├── Cargo.toml
 │   └── src/
 │       └── main.rs       # CLI entry point
+├── docs/                 # Documentation
+│   ├── index.md          # Overview
+│   ├── installation.md   # Build instructions
+│   ├── configuration.md  # Config options
+│   ├── vault-format.md   # .emberkeys spec
+│   ├── cli-reference.md  # CLI commands
+│   └── security.md       # Security model
 └── .github/workflows/    # CI/CD
 ```
 
-**Why a workspace?** `coalbox-core` is designed as a standalone library. When Ember Browser integration ships at v0.6, it will depend on `coalbox-core` directly — without pulling in the CLI. Third-party tools can also implement `.emberkeys` support by depending on just the core crate.
+**Why a workspace?** `coalbox-core` is designed as a standalone library. When Ember Browser integration ships at v0.7, it will depend on `coalbox-core` directly — without pulling in the CLI. Third-party tools can also implement `.emberkeys` support by depending on just the core crate.
 
 ## Security
 

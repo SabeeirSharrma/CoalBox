@@ -46,9 +46,24 @@ coalbox get github -v ~/vault.emberkeys
 # Generate a password
 coalbox generate -l 32
 
+# Generate a passphrase
+coalbox generate --passphrase --words 6
+
 # Show vault info
 coalbox info -v ~/vault.emberkeys
 ```
+
+## Features
+
+- **Login entries** — username, password, URL, TOTP
+- **Secure Notes** — freeform encrypted text
+- **Payment Cards** — cardholder, number (masked), expiry, CVV, PIN
+- **Identity entries** — name, email, phone, full address
+- **Custom fields** — text, hidden, URL, date types
+- **Tags & favourites** — organize and highlight entries
+- **Password generator** — character mode with configurable options
+- **Passphrase generator** — EFF wordlist (7776 words), configurable word count
+- **Password history** — previous passwords retained on update
 
 ## Vault Format
 
@@ -66,7 +81,15 @@ The `.emberkeys` format is a single encrypted file:
 
 Encryption: AES-256-GCM. Key derivation: Argon2id (64MB, 3 iterations, 4 parallelism).
 
-See [spec.md](spec.md) for the full specification. Third-party implementations are encouraged.
+See [docs/vault-format.md](docs/vault-format.md) for the full specification. Third-party implementations are encouraged.
+
+## Documentation
+
+- [Installation](docs/installation.md)
+- [Configuration](docs/configuration.md)
+- [Vault Format](docs/vault-format.md)
+- [CLI Reference](docs/cli-reference.md)
+- [Security](docs/security.md)
 
 ## Security
 

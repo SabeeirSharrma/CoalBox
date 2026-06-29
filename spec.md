@@ -1,8 +1,9 @@
 # Coalbox — Password Manager
+
 # The Cinder Project
 
-**Status:** Planning
-**Version:** 0.1-spec
+**Status:** In Development
+**Version:** 0.2.0
 **Maintainer:** The Cinder Project
 **Depends on:** Nothing (standalone), optionally integrated into Ember Browser
 
@@ -30,8 +31,9 @@ Coalbox works standalone on any system. It is also integrated natively into Embe
 │                     Coalbox                         │
 │                                                     │
 │  ┌───────────────────────────────────────────────┐  │
-│  │                Coalbox UI                    │  │
-│  │  Standalone app (GTK) or Ember-native panel  │  │
+│  │                Coalbox UI                     │  │
+│  │  Standalone (GTK), Ember-native panel,        │  │
+│  │  or local WebUI (browser-based)               │  │
 │  └───────────────────────────────────────────────┘  │
 │                                                     │
 │  ┌───────────────────────────────────────────────┐  │
@@ -62,9 +64,11 @@ Written in Rust. Handles all vault operations:
 
 ### 2.2 Coalbox UI
 
-Two modes:
+Three modes:
 
 **Standalone** — a GTK application for use outside of Ember. Works on any Linux desktop.
+
+**WebUI** — a local web server that serves a browser-based interface. Binds to `127.0.0.1` only. Access from any modern browser on the same machine. No external network access.
 
 **Ember-native** — a sidebar panel and toolbar button integrated directly into Ember Shell. No separate window needed when using Ember. Autofill triggers inline without leaving the page.
 
@@ -189,7 +193,7 @@ Coalbox does not operate any sync server. Sync is the user's responsibility.
 
 The recommended workflow:
 
-1. Store the `.emberkeys` file in a synced folder (Google Drive, OneDrive, Nextcloud, Syncthing, etc.)
+1. Store the `.emberkeys` file in a synced folder named `CoalBox_sync` (Google Drive, OneDrive, Nextcloud, Syncthing, etc.)
 2. Point Coalbox at that path
 3. The cloud service handles sync across devices
 
@@ -292,20 +296,114 @@ Coalbox in Ember communicates with Coalbox Core via IPC. The vault process is se
 
 ---
 
-## 7. Standalone Distribution
+## 7. WebUI (Ease of Access)
+
+For users who want a graphical interface without installing Ember or using the CLI, Coalbox includes an optional WebUI. As lite as possible — no build step, no bundler, no framework.
+
+### 7.1 Tech Stack
+
+- **Server:** [axum](https://github.com/tokio-rs/axum) — lightweight async Rust web framework
+- **Frontend:** Vanilla HTML/CSS/JS — zero build step, zero dependencies
+- **Styling:** Tailwind CSS via CDN — no local install, no purge step
+- **State:** WebSocket for real-time vault state
+- **Binary:** Single `coalbox-web` executable, frontend served from memory
+
+### 7.2 Architecture
+
+```
+┌─────────────────────────────────────────────────────┐
+│                   Coalbox WebUI                     │
+│                                                     │
+│  ┌───────────────────────────────────────────────┐  │
+│  │           axum (Rust, localhost)              │  │
+│  │  Serves HTML/JS, WebSocket, REST endpoints    │  │
+│  └───────────────────────────────────────────────┘  │
+│                        │                            │
+│                        ▼                            │
+│  ┌───────────────────────────────────────────────┐  │
+│  │              Coalbox Core (Rust)              │  │
+│  │  Same library used by CLI and Ember           │  │
+│  └───────────────────────────────────────────────┘  │
+│                        │                            │
+│                        ▼                            │
+│  ┌───────────────────────────────────────────────┐  │
+│  │           .emberkeys Vault File               │  │
+│  └───────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────┘
+```
+
+### 7.3 Design
+
+- **Local only** — binds to `127.0.0.1` with a random port. No external network access.
+- **No cloud, no accounts** — same principles as the CLI.
+- **No build step** — frontend is raw HTML/CSS/JS files. Tailwind via `<script src="https://cdn.tailwindcss.com">`. No npm, no webpack, no vite.
+- **Minimal JS** — vanilla `fetch()` for API calls, native `WebSocket` for state. No React, no Alpine, no framework.
+- **Embedded assets** — HTML/JS served from the Rust binary via `axum::Router`. No filesystem serving.
+- **Single binary** — `coalbox-web` contains the server, frontend, and coalbox-core.
+
+### 7.4 API
+
+```
+POST   /api/unlock          # unlock vault with master password
+POST   /api/lock            # lock vault
+GET    /api/status          # lock state, entry count
+GET    /api/entries         # list all entries
+GET    /api/entries/:id     # get single entry
+POST   /api/entries         # create entry
+PUT    /api/entries/:id     # update entry
+DELETE /api/entries/:id     # delete entry
+GET    /api/search?q=       # search entries
+POST   /api/generate        # generate password
+WS     /ws                  # real-time state (lock/unlock notifications)
+```
+
+### 7.5 Features
+
+- Full vault management (add, edit, delete entries)
+- Search across all entries
+- Password generator with live preview
+- TOTP code display with countdown timer
+- Copy password/TOTP to clipboard (auto-clear after 30s)
+- Vault lock/unlock from the browser
+- Entry import/export
+
+### 7.6 Usage
+
+```bash
+# Start the WebUI
+coalbox-web --vault ~/vault.emberkeys
+
+# Opens at http://127.0.0.1:<random-port>
+# Vault unlocks via the web interface
+# Close browser tab or Ctrl+C to stop
+```
+
+### 7.7 Security
+
+- Server binds to localhost only — no remote access possible
+- No CORS headers for external origins
+- Vault data never leaves the process memory
+- Auto-locks when the WebUI process is stopped
+- Same encryption and key derivation as CLI/Ember
+- Tailwind loaded from CDN is styling-only, no JS execution
+
+---
+
+## 8. Standalone Distribution
 
 Coalbox is distributed two ways:
 
 - **Via CPAC** — source build, same as all Cinder Project software
 - **Standalone** — source tarball, buildable independently of Ember
 
-The Coalbox Core (Rust) and CLI build without any Ember dependency. The GTK standalone UI builds without any Ember dependency. Only the Ember Shell integration component requires Ember.
+The Coalbox Core (Rust) and CLI build without any Ember dependency. The GTK standalone UI and WebUI build without any Ember dependency. Only the Ember Shell integration component requires Ember.
 
 ---
 
-## 8. Versioned Roadmap
+## 9. Versioned Roadmap
 
 ### v0.1 — Core Vault
+
 - `.emberkeys` format defined and documented
 - Vault create, unlock, lock
 - Entry CRUD (login, note)
@@ -315,6 +413,7 @@ The Coalbox Core (Rust) and CLI build without any Ember dependency. The GTK stan
 - CPAC package definition
 
 ### v0.2 — Full Entry Types + Generator
+
 - Payment card and identity entry types
 - Custom fields
 - Tags and favourites
@@ -322,46 +421,62 @@ The Coalbox Core (Rust) and CLI build without any Ember dependency. The GTK stan
 - Entry history
 
 ### v0.3 — TOTP + Breach Check
+
 - TOTP secret storage and code generation
 - HaveIBeenPwned breach checking (k-anonymity)
 - Full vault audit
 
 ### v0.4 — Import / Export
+
 - Import: KeePass XML, Bitwarden JSON, 1Password 1PUX, CSV
 - Export: plaintext JSON
 - Conflict merge UI for sync conflicts
 
 ### v0.5 — CLI
+
 - Full `coalbox` CLI
 - Daemon mode for unlock persistence
 - Scripting-friendly output (JSON flags)
 
-### v0.6 — Ember Integration
+### v0.6 — WebUI
+
+- Local web server (localhost only)
+- Full vault management via browser
+- Password generator with live preview
+- TOTP display with countdown
+- WebSocket real-time state
+- Single `coalbox-web` binary
+
+### v0.7 — Ember Integration
+
 - Toolbar button and sidebar panel
 - Autofill (username + password + TOTP)
 - New credential save prompt
 - Address bar indicator
 - Generator inline from password fields
 
-### v0.7 — Security Hardening
+### v0.8 — Security Hardening
+
 - mlock for vault memory
 - Clipboard auto-clear
 - Lock on suspend
 - Security audit pass
 
-### v0.8 — Polish + Docs
+### v0.9 — Polish + Docs
+
 - Full user documentation
 - `.emberkeys` format spec published
 - Bug fix sprint
 
 ### v1.0 — Stable Release
+
 - All features stable and documented
 - CPAC package stable
 - Format spec v1.0 frozen
 
 ---
 
-## 9. Future Considerations
+## 10. Future Considerations
 
 - **Browser extension** — a standalone Coalbox extension (`.crx`) for use in non-Ember browsers, sideloadable
 - **Android app** — mobile vault access, post-v1.0
@@ -371,10 +486,10 @@ The Coalbox Core (Rust) and CLI build without any Ember dependency. The GTK stan
 
 ---
 
-## 10. Project Info
+## 11. Project Info
 
 **Repository:** TBD (The Cinder Project org)
-**Language:** Rust (core, CLI), TypeScript (Ember panel UI), C/GTK (standalone UI)
+**Language:** Rust (core, CLI, WebUI), TypeScript (Ember panel UI), C/GTK (standalone UI)
 **License:** TBD (likely GPL-3.0 or MIT)
 **Part of:** The Cinder Project
 **Integrated into:** Ember Browser (v0.6+)

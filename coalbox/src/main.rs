@@ -2,10 +2,12 @@ use clap::{Parser, Subcommand};
 use colored::Colorize;
 use std::path::PathBuf;
 
-use coalbox_core::{Entry, Vault};
+use coalbox_core::{
+    generate_passphrase, generate_password, Entry, PassphraseConfig, PasswordConfig, Vault,
+};
 
 #[derive(Parser)]
-#[command(name = "coalbox", version = "0.1.0", about = "Coalbox password manager")]
+#[command(name = "coalbox", version = "0.2.0", about = "Coalbox password manager")]
 struct Cli {
     #[command(subcommand)]
     command: Commands,
@@ -37,25 +39,45 @@ enum Commands {
         vault: Option<String>,
     },
 
-    /// Generate a password
+    /// Generate a password or passphrase
     Generate {
-        /// Password length
+        /// Generate a passphrase instead of a password
+        #[arg(long)]
+        passphrase: bool,
+
+        /// Password length (character mode)
         #[arg(short, long, default_value = "20")]
         length: usize,
 
-        /// Include uppercase letters
+        /// Word count (passphrase mode)
+        #[arg(short = 'w', long, default_value = "6")]
+        words: usize,
+
+        /// Separator character (passphrase mode)
+        #[arg(short, long, default_value = " ")]
+        separator: String,
+
+        /// Capitalize words (passphrase mode)
+        #[arg(long, default_value = "true")]
+        capitalize: bool,
+
+        /// Include a number at the end (passphrase mode)
+        #[arg(long)]
+        number: bool,
+
+        /// Include uppercase letters (character mode)
         #[arg(long, default_value = "true")]
         uppercase: bool,
 
-        /// Include lowercase letters
+        /// Include lowercase letters (character mode)
         #[arg(long, default_value = "true")]
         lowercase: bool,
 
-        /// Include numbers
+        /// Include numbers (character mode)
         #[arg(long, default_value = "true")]
         numbers: bool,
 
-        /// Include symbols
+        /// Include symbols (character mode)
         #[arg(long, default_value = "true")]
         symbols: bool,
     },
@@ -87,7 +109,11 @@ fn prompt_password(prompt: &str) -> String {
 fn create_vault(path: &str) {
     let path = PathBuf::from(shellexpand::tilde(path).to_string());
     if path.exists() {
-        eprintln!("{} Vault already exists at {}", "error:".red().bold(), path.display());
+        eprintln!(
+            "{} Vault already exists at {}",
+            "error:".red().bold(),
+            path.display()
+        );
         std::process::exit(1);
     }
 
@@ -104,13 +130,20 @@ fn create_vault(path: &str) {
     }
 
     if password.len() < 8 {
-        eprintln!("{} Master password must be at least 8 characters", "error:".red().bold());
+        eprintln!(
+            "{} Master password must be at least 8 characters",
+            "error:".red().bold()
+        );
         std::process::exit(1);
     }
 
     match Vault::create(&path, &password) {
         Ok(vault) => {
-            println!("{} Created vault at {}", "✓".green().bold(), path.display());
+            println!(
+                "{} Created vault at {}",
+                "✓".green().bold(),
+                path.display()
+            );
             println!("  {} entries", vault.entry_count());
         }
         Err(e) => {
@@ -127,8 +160,15 @@ fn unlock_vault(vault_path: &Option<String>) -> (Vault, String) {
         .unwrap_or_else(default_vault_path);
 
     if !path.exists() {
-        eprintln!("{} Vault not found at {}", "error:".red().bold(), path.display());
-        eprintln!("  Run {} to create a vault", "coalbox create".cyan());
+        eprintln!(
+            "{} Vault not found at {}",
+            "error:".red().bold(),
+            path.display()
+        );
+        eprintln!(
+            "  Run {} to create a vault",
+            "coalbox create".cyan()
+        );
         std::process::exit(1);
     }
 
@@ -146,7 +186,6 @@ fn unlock_vault(vault_path: &Option<String>) -> (Vault, String) {
 fn get_entry(query: &str, vault_path: &Option<String>) {
     let (vault, _password) = unlock_vault(vault_path);
 
-    // Try exact title match first, then URL, then search
     let entry = vault
         .get_entry_by_title(query)
         .or_else(|_| vault.get_entry_by_url(query))
@@ -190,13 +229,20 @@ fn list_entries(vault_path: &Option<String>) {
                 };
 
                 let fav = if entry.favourite { " ★" } else { "" };
+                let tags = if entry.tags.is_empty() {
+                    String::new()
+                } else {
+                    format!(" [{}]", entry.tags.join(", ")).dimmed().to_string()
+                };
 
+                let display = entry.display_name();
                 println!(
-                    "  {} {} {} {}",
+                    "  {} {} {} {}{}",
                     entry.id.to_string()[..8].dimmed(),
-                    entry.title.bold(),
+                    display.bold(),
                     format!("[{}]", type_str).dimmed(),
-                    fav.yellow()
+                    fav.yellow(),
+                    tags
                 );
 
                 if let Some(ref url) = entry.url {
@@ -225,6 +271,9 @@ fn print_entry(entry: &Entry) {
     println!("{}", "═".repeat(50).dimmed());
     println!("{}", entry.title.bold());
     println!("{}", type_str.dimmed());
+    if entry.favourite {
+        println!("{}", "★ Favourite".yellow());
+    }
     println!("{}", "═".repeat(50).dimmed());
 
     if let Some(ref url) = entry.url {
@@ -235,48 +284,135 @@ fn print_entry(entry: &Entry) {
     }
     if let Some(ref password) = entry.password {
         println!("Password: {}", "*".repeat(password.len()));
+        if !entry.password_history.is_empty() {
+            println!(
+                "          ({} previous passwords in history)",
+                entry.password_history.len()
+            );
+        }
     }
     if let Some(ref notes) = entry.notes {
         println!("Notes:    {}", notes);
     }
-    if !entry.tags.is_empty() {
-        println!("Tags:     {}", entry.tags.join(", "));
+
+    if let Some(ref card) = entry.card {
+        println!();
+        println!("Card Details:");
+        if let Some(ref holder) = card.cardholder {
+            println!("  Cardholder: {}", holder);
+        }
+        if let Some(ref number) = card.number {
+            let masked = if number.len() > 4 {
+                format!("•••• {}", &number[number.len() - 4..])
+            } else {
+                number.clone()
+            };
+            println!("  Number:     {}", masked);
+        }
+        if let Some(ref expiry) = card.expiry {
+            println!("  Expires:    {}", expiry);
+        }
+        if let Some(ref cvv) = card.cvv {
+            println!("  CVV:        {}", "*".repeat(cvv.len()));
+        }
+        if let Some(ref pin) = card.pin {
+            println!("  PIN:        {}", "*".repeat(pin.len()));
+        }
     }
-    println!("Created:  {}", entry.created.format("%Y-%m-%d %H:%M:%S UTC"));
-    println!("Modified: {}", entry.modified.format("%Y-%m-%d %H:%M:%S UTC"));
+
+    if let Some(ref identity) = entry.identity {
+        println!();
+        println!("Identity:");
+        if let Some(ref name) = identity.first_name {
+            let full = match (&identity.middle_name, &identity.last_name) {
+                (Some(mid), Some(last)) => format!("{} {} {}", name, mid, last),
+                (None, Some(last)) => format!("{} {}", name, last),
+                _ => name.clone(),
+            };
+            println!("  Name:   {}", full);
+        }
+        if let Some(ref email) = identity.email {
+            println!("  Email:  {}", email);
+        }
+        if let Some(ref phone) = identity.phone {
+            println!("  Phone:  {}", phone);
+        }
+        if let Some(ref addr) = identity.address_line1 {
+            print!("  Address: {}", addr);
+            if let Some(ref city) = identity.city {
+                print!(", {}", city);
+            }
+            if let Some(ref state) = identity.state {
+                print!(", {}", state);
+            }
+            if let Some(ref zip) = identity.postal_code {
+                print!(" {}", zip);
+            }
+            println!();
+        }
+    }
+
+    if !entry.custom_fields.is_empty() {
+        println!();
+        println!("Custom Fields:");
+        for field in &entry.custom_fields {
+            let value = match field.field_type {
+                coalbox_core::entry::FieldType::Hidden => "*".repeat(field.value.len()),
+                _ => field.value.clone(),
+            };
+            println!("  {}: {}", field.name, value);
+        }
+    }
+
+    if !entry.tags.is_empty() {
+        println!();
+        println!("Tags: {}", entry.tags.join(", "));
+    }
+
+    println!();
+    println!(
+        "Created:  {}",
+        entry.created.format("%Y-%m-%d %H:%M:%S UTC")
+    );
+    println!(
+        "Modified: {}",
+        entry.modified.format("%Y-%m-%d %H:%M:%S UTC")
+    );
 }
 
-fn generate_password(length: usize, uppercase: bool, lowercase: bool, numbers: bool, symbols: bool) {
-    let mut charset = Vec::new();
-
-    if uppercase {
-        charset.extend_from_slice(b"ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+#[allow(clippy::too_many_arguments)]
+fn handle_generate(
+    passphrase: bool,
+    length: usize,
+    words: usize,
+    separator: String,
+    capitalize: bool,
+    number: bool,
+    uppercase: bool,
+    lowercase: bool,
+    numbers: bool,
+    symbols: bool,
+) {
+    if passphrase {
+        let config = PassphraseConfig {
+            word_count: words,
+            separator,
+            capitalize,
+            include_number: number,
+        };
+        println!("{}", generate_passphrase(&config));
+    } else {
+        let config = PasswordConfig {
+            length,
+            uppercase,
+            lowercase,
+            numbers,
+            symbols,
+            custom_symbols: None,
+            exclude_chars: None,
+        };
+        println!("{}", generate_password(&config));
     }
-    if lowercase {
-        charset.extend_from_slice(b"abcdefghijklmnopqrstuvwxyz");
-    }
-    if numbers {
-        charset.extend_from_slice(b"0123456789");
-    }
-    if symbols {
-        charset.extend_from_slice(b"!@#$%^&*()_+-=[]{}|;:,.<>?");
-    }
-
-    if charset.is_empty() {
-        eprintln!("{} At least one character set must be enabled", "error:".red().bold());
-        std::process::exit(1);
-    }
-
-    use rand::Rng;
-    let mut rng = rand::thread_rng();
-    let password: String = (0..length)
-        .map(|_| {
-            let idx = rng.gen_range(0..charset.len());
-            charset[idx] as char
-        })
-        .collect();
-
-    println!("{}", password);
 }
 
 fn show_info(vault_path: &Option<String>) {
@@ -286,7 +422,11 @@ fn show_info(vault_path: &Option<String>) {
         .unwrap_or_else(default_vault_path);
 
     if !path.exists() {
-        eprintln!("{} Vault not found at {}", "error:".red().bold(), path.display());
+        eprintln!(
+            "{} Vault not found at {}",
+            "error:".red().bold(),
+            path.display()
+        );
         std::process::exit(1);
     }
 
@@ -308,14 +448,25 @@ fn main() {
         Commands::Get { query, vault } => get_entry(&query, &vault),
         Commands::List { vault } => list_entries(&vault),
         Commands::Generate {
+            passphrase,
             length,
+            words,
+            separator,
+            capitalize,
+            number,
             uppercase,
             lowercase,
             numbers,
             symbols,
-        } => generate_password(length, uppercase, lowercase, numbers, symbols),
+        } => handle_generate(
+            passphrase, length, words, separator, capitalize, number, uppercase, lowercase,
+            numbers, symbols,
+        ),
         Commands::Lock => {
-            eprintln!("{} Daemon mode not yet implemented", "todo:".yellow().bold());
+            eprintln!(
+                "{} Daemon mode not yet implemented",
+                "todo:".yellow().bold()
+            );
             std::process::exit(1);
         }
         Commands::Info { vault } => show_info(&vault),

@@ -1,25 +1,25 @@
-# v0.1.0 — Core Vault
+# v0.2.0 — Full Entry Types + Generator
 
-First release of Coalbox.
+## What's new
 
-## What's included
-
-- `.emberkeys` vault format (EMBK magic, versioned, open spec)
-- AES-256-GCM encryption with Argon2id key derivation (64MB, 3 iter, 4 parallelism)
-- Vault create, unlock, lock, save
-- Entry CRUD — Login, Secure Note, Payment Card, Identity types
-- Search across title, URL, username, notes
-- CLI: `create`, `get`, `list`, `generate`, `info`
-- Password generator (configurable length, character sets)
-- 15 passing tests
+- **Payment Card entries** — cardholder, number (masked), expiry, CVV, PIN
+- **Identity entries** — name, email, phone, full address
+- **Custom fields** — text, hidden, URL, date types per entry
+- **Tags** — add, remove, search by tag
+- **Favourites** — mark entries as favourite
+- **Password generator** — character mode with configurable length, uppercase, lowercase, numbers, symbols
+- **Passphrase generator** — EFF large wordlist (7776 words), configurable word count, separator, capitalization
+- **Entry history** — previous passwords retained when updated
+- **Display name** — cards show masked number, identities show full name
+- **CLI updated** — `--passphrase` flag, `--words`, `--separator`, `--capitalize`, `--number` options
 
 ## What's not in this release
 
 - TOTP (v0.3)
 - Breach checking (v0.3)
 - Import/export (v0.4)
-- Ember Browser integration (v0.6)
-- Daemon/lock mode (v0.5)
+- WebUI (v0.6)
+- Ember Browser integration (v0.7)
 
 ## Build from source
 
