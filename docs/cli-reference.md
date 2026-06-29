@@ -75,7 +75,7 @@ coalbox list [-v <VAULT>] [-t <TAG>] [-T <TYPE>]
 | --- | --- |
 | `-v, --vault` | Vault file path |
 | `-t, --tag` | Filter by tag |
-| `-T, --type` | Filter by type (login, note, card, identity) |
+| `-T, --type` | Filter by type (login, note, card, identity, authenticator) |
 
 **Examples:**
 

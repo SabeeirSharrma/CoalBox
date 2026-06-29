@@ -1,13 +1,12 @@
-# v0.6.0 — WebUI
+# v0.6.1 — WebUI
 
 ## What's new
 
-- **WebUI** — localhost web interface at `http://127.0.0.1:<port>`
-- **axum server** — lightweight async Rust web framework
-- **REST API** — full CRUD for entries, search, generate, TOTP
-- **WebSocket** — real-time lock/unlock/entries notifications
-- **Vanilla frontend** — HTML/CSS/JS, Tailwind CDN, zero build step
-- **Single binary** — `coalbox-web` with embedded frontend
+- **WebUI** — beautifully redesigned localhost web interface with TailwindCSS and Lucide icons
+- **REST API** — FIXED - full CRUD for entries, search, generate, TOTP
+- **WebSocket** — FIXED - real-time lock/unlock/entries notifications
+- **Authenticator entries** — separate standalone 2FA entries, with a dedicated tab in the WebUI and animated countdown rings
+- **Single binary** — `coalbox-web` with embedded HTML/CSS/JS frontend
 
 ## Usage
 

@@ -52,6 +52,7 @@ struct VaultState {
 #[derive(Clone)]
 struct AppState {
     vault: SharedVault,
+    default_vault_path: String,
     tx: broadcast::Sender<String>,
 }
 
@@ -140,6 +141,8 @@ struct CreateEntryRequest {
     url: String,
     #[serde(default)]
     notes: String,
+    #[serde(default)]
+    totp_secret: String,
     #[serde(default = "default_entry_type")]
     entry_type: String,
 }
@@ -153,6 +156,7 @@ struct UpdateEntryRequest {
     password: Option<String>,
     url: Option<String>,
     notes: Option<String>,
+    totp_secret: Option<String>,
 }
 
 // ── Handlers ─────────────────────────────────────────────────────────
@@ -161,7 +165,7 @@ async fn get_status(State(state): State<AppState>) -> Json<ApiResponse<StatusRes
     let vault = state.vault.read().await;
     let (locked, entry_count, vault_path) = match vault.as_ref() {
         Some(v) => (false, v.vault.entry_count(), v.vault_path.clone()),
-        None => (true, 0, String::new()),
+        None => (true, 0, state.default_vault_path.clone()),
     };
     ApiResponse::ok(StatusResponse {
         locked,
@@ -178,13 +182,7 @@ async fn unlock(
         let v = state.vault.read().await;
         v.as_ref()
             .map(|v| v.vault_path.clone())
-            .unwrap_or_else(|| {
-                let home = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
-                std::path::PathBuf::from(home)
-                    .join(".local/share/coalbox/vault.emberkeys")
-                    .to_string_lossy()
-                    .to_string()
-            })
+            .unwrap_or_else(|| state.default_vault_path.clone())
     };
 
     let path = std::path::PathBuf::from(shellexpand::tilde(&vault_path).to_string());
@@ -219,7 +217,7 @@ async fn lock(State(state): State<AppState>) -> Json<ApiResponse<StatusResponse>
     ApiResponse::ok(StatusResponse {
         locked: true,
         entry_count: 0,
-        vault_path: String::new(),
+        vault_path: state.default_vault_path.clone(),
     })
 }
 
@@ -266,10 +264,16 @@ async fn create_entry(
         Some(vs) => {
             let entry = match req.entry_type.as_str() {
                 "note" => Entry::new_note(req.title, req.notes),
+                "authenticator" => Entry::new_authenticator(req.title, req.totp_secret.clone()),
                 _ => Entry::new_login(req.title, req.username, req.password),
             };
             let entry = if !req.url.is_empty() {
                 entry.with_url(req.url)
+            } else {
+                entry
+            };
+            let entry = if !req.totp_secret.is_empty() {
+                entry.with_totp(req.totp_secret)
             } else {
                 entry
             };
@@ -322,6 +326,13 @@ async fn update_entry(
                 }
                 if let Some(notes) = req.notes {
                     entry.notes = Some(notes);
+                }
+                if let Some(totp_secret) = req.totp_secret {
+                    entry.totp_secret = if totp_secret.is_empty() {
+                        None
+                    } else {
+                        Some(totp_secret)
+                    };
                 }
                 entry.modified = chrono::Utc::now();
             });
@@ -514,6 +525,7 @@ async fn main() {
 
     let state = AppState {
         vault: Arc::new(RwLock::new(None)),
+        default_vault_path: vault_path.clone(),
         tx,
     };
 

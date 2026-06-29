@@ -381,6 +381,7 @@ fn list_entries(
                     coalbox_core::entry::EntryType::Note => "note",
                     coalbox_core::entry::EntryType::Card => "card",
                     coalbox_core::entry::EntryType::Identity => "identity",
+                    coalbox_core::entry::EntryType::Authenticator => "authenticator",
                 };
                 if type_str != t.as_str() {
                     return false;
@@ -766,6 +767,7 @@ fn print_entry_summary(entry: &Entry) {
         coalbox_core::entry::EntryType::Note => "note".yellow(),
         coalbox_core::entry::EntryType::Card => "card".magenta(),
         coalbox_core::entry::EntryType::Identity => "identity".green(),
+        coalbox_core::entry::EntryType::Authenticator => "authenticator".cyan(),
     };
 
     let fav = if entry.favourite { " ★" } else { "" };
@@ -799,6 +801,7 @@ fn print_entry_pretty(entry: &Entry) {
         coalbox_core::entry::EntryType::Note => "Secure Note",
         coalbox_core::entry::EntryType::Card => "Payment Card",
         coalbox_core::entry::EntryType::Identity => "Identity",
+        coalbox_core::entry::EntryType::Authenticator => "Authenticator",
     };
 
     println!("{}", "═".repeat(50).dimmed());

@@ -11,6 +11,7 @@ pub enum EntryType {
     Note,
     Card,
     Identity,
+    Authenticator,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -137,9 +138,11 @@ impl Entry {
     }
 
     pub fn new_note(title: String, notes: String) -> Self {
-        let mut entry = Self::base(Uuid::new_v4(), EntryType::Note, title);
-        entry.notes = Some(notes);
-        entry
+        Self::base(Uuid::new_v4(), EntryType::Note, title).with_notes(notes)
+    }
+
+    pub fn new_authenticator(title: String, secret: String) -> Self {
+        Self::base(Uuid::new_v4(), EntryType::Authenticator, title).with_totp(secret)
     }
 
     pub fn new_card(title: String, card: CardData) -> Self {

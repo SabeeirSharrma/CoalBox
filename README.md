@@ -87,6 +87,7 @@ coalbox-web --vault ~/vault.emberkeys
 ## Features
 
 - **Login entries** — username, password, URL, TOTP
+- **Authenticator entries** — standalone 2FA codes, separate from passwords
 - **Secure Notes** — freeform encrypted text
 - **Payment Cards** — cardholder, number (masked), expiry, CVV, PIN
 - **Identity entries** — name, email, phone, full address
@@ -95,14 +96,14 @@ coalbox-web --vault ~/vault.emberkeys
 - **Password generator** — character mode with configurable options
 - **Passphrase generator** — EFF wordlist (7776 words), configurable word count
 - **Password history** — previous passwords retained on update
-- **TOTP codes** — RFC 6238, generate 2FA codes from the vault
+- **TOTP codes** — RFC 6238, auto-refreshing UI with countdown rings
 - **Breach checking** — HaveIBeenPwned k-anonymity, vault audit
 - **Import** — CSV, Bitwarden JSON, KeePass XML, 1Password 1PUX
 - **Export** — plaintext JSON backup
 - **JSON output** — `--json` flag for all commands, scripting-friendly
 - **Field extraction** — `get --field password` for single values
 - **Entry filtering** — `list --tag work --type login`
-- **WebUI** — localhost web interface, full vault management in the browser
+- **WebUI** — beautifully redesigned localhost web interface with TailwindCSS and Lucide icons, full vault management in the browser
 
 ## Vault Format
 

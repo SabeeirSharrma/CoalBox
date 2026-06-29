@@ -32,6 +32,7 @@ Coalbox is a password manager that runs entirely on your local machine. It store
 ### Entry Types
 
 - **Login** — username, password, URL, TOTP
+- **Authenticator** — standalone 2FA codes, separated from passwords
 - **Secure Note** — freeform text
 - **Payment Card** — cardholder, number, expiry, CVV, PIN
 - **Identity** — name, email, phone, address
@@ -70,10 +71,11 @@ Coalbox is a password manager that runs entirely on your local machine. It store
 
 ### WebUI
 
-- localhost web interface (axum, vanilla JS, Tailwind CDN)
+- beautifully redesigned localhost web interface (axum, vanilla JS, Tailwind CSS, Lucide icons)
 - Full vault management via browser
+- Dedicated tab for Authenticator codes
 - Password generator with live preview
-- TOTP display with countdown timer
+- TOTP display with auto-refreshing animated countdown timers
 - WebSocket real-time state
 
 ## Quick Start

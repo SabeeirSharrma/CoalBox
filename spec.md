@@ -111,7 +111,7 @@ The decrypted payload is a JSON object:
 }
 ```
 
-Entry types: `login`, `note`, `card`, `identity`.
+Entry types: `login`, `note`, `card`, `identity`, `authenticator`.
 
 The format spec is published separately as `EMBERKEYS_FORMAT.md` in the Coalbox repository. Third-party implementations are encouraged.
 
@@ -304,7 +304,7 @@ For users who want a graphical interface without installing Ember or using the C
 
 - **Server:** [axum](https://github.com/tokio-rs/axum) — lightweight async Rust web framework
 - **Frontend:** Vanilla HTML/CSS/JS — zero build step, zero dependencies
-- **Styling:** Tailwind CSS via CDN — no local install, no purge step
+- **Styling:** Tailwind CSS (via CDN) + Lucide Icons — no local install, no purge step
 - **State:** WebSocket for real-time vault state
 - **Binary:** Single `coalbox-web` executable, frontend served from memory
 

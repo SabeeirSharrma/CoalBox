@@ -136,6 +136,18 @@ Personal identity information.
 }
 ```
 
+### Authenticator
+
+Standalone 2FA (TOTP) codes.
+
+```json
+{
+  "entry_type": "authenticator",
+  "title": "Google Backup Code",
+  "totp_secret": "JBSWY3DPEHPK3PXP"
+}
+```
+
 ## Custom Fields
 
 Entries can have custom fields with these types:
