@@ -8,7 +8,32 @@ order: 2
 
 Coalbox runs on any system with Rust installed. No external dependencies required.
 
-## Build from Source (Recommended)
+## Quick Install (Recommended)
+
+One command to build and install coalbox from source:
+
+```bash
+curl -sSf https://thecinderproject.qd.je/coalbox/install.sh | bash
+```
+
+This script will:
+- Detect if Rust is already installed on your system
+- If not, install Rust temporarily just for building
+- Clone and build coalbox from source
+- Install the binary to `/usr/local/bin`
+- If Rust was not present before, **automatically remove it** after installation
+
+No dependencies are left behind. The script is fully transparent — you can review it before running:
+
+```bash
+curl -sSf https://thecinderproject.qd.je/coalbox/install.sh -o install.sh
+less install.sh
+bash install.sh
+```
+
+## Build from Source
+
+If you prefer to build manually:
 
 ```bash
 git clone https://github.com/SabeeirSharrma/coalbox.git
@@ -28,7 +53,7 @@ sudo cp target/release/coalbox /usr/local/bin/coalbox
 
 ```bash
 coalbox --version
-# coalbox 0.2.0
+# coalbox 0.3.0
 ```
 
 ## Pre-built Binaries

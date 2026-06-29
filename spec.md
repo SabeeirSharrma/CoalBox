@@ -474,12 +474,20 @@ The Coalbox Core (Rust) and CLI build without any Ember dependency. The GTK stan
 - CPAC package stable
 - Format spec v1.0 frozen
 
+### v1.1 — Android
+
+- Native Android app (Kotlin + coalbox-core via FFI)
+- Vault access on mobile
+- Autofill via Android Autofill Framework
+- Biometric unlock (fingerprint/face)
+- QR code scanning for TOTP setup
+- Same `.emberkeys` format — sync via any cloud service
+
 ---
 
 ## 10. Future Considerations
 
 - **Browser extension** — a standalone Coalbox extension (`.crx`) for use in non-Ember browsers, sideloadable
-- **Android app** — mobile vault access, post-v1.0
 - **SSH key storage** — store SSH private keys in the vault, integrate with ssh-agent
 - **Hardware key support** — YubiKey / FIDO2 as second factor to unlock vault (alongside or instead of master password)
 - **Ember Sync integration** — when Ember Sync ships post-v1.0, Coalbox vault sync can be optionally routed through it
@@ -489,7 +497,7 @@ The Coalbox Core (Rust) and CLI build without any Ember dependency. The GTK stan
 ## 11. Project Info
 
 **Repository:** TBD (The Cinder Project org)
-**Language:** Rust (core, CLI, WebUI), TypeScript (Ember panel UI), C/GTK (standalone UI)
+**Language:** Rust (core, CLI, WebUI), TypeScript (Ember panel UI), C/GTK (standalone UI), Kotlin (Android)
 **License:** TBD (likely GPL-3.0 or MIT)
 **Part of:** The Cinder Project
 **Integrated into:** Ember Browser (v0.6+)

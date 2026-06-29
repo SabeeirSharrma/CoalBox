@@ -37,4 +37,10 @@ pub enum CoalboxError {
 
     #[error("Argon2 error: {0}")]
     Argon2(String),
+
+    #[error("TOTP error: {0}")]
+    Totp(String),
+
+    #[error("Breach check error: {0}")]
+    BreachCheck(String),
 }

@@ -1,6 +1,6 @@
 [package]
 name = "coalbox-core"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2024"
 description = "Coalbox password manager core library"
 
@@ -15,6 +15,11 @@ chrono = { version = "0.4", features = ["serde"] }
 zeroize = { version = "1", features = ["derive"] }
 thiserror = "2"
 rmp-serde = "1"
+hmac = "0.12"
+sha1 = "0.10"
+sha2 = "0.10"
+base32 = "0.4"
+ureq = { version = "3", features = ["json"] }
 
 [dev-dependencies]
 tempfile = "3"

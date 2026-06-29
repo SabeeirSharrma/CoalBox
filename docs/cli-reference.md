@@ -148,6 +148,78 @@ coalbox lock
 
 ---
 
+### totp
+
+Show TOTP code for an entry.
+
+```bash
+coalbox totp <QUERY> [-v <VAULT>]
+```
+
+| Argument | Description |
+| --- | --- |
+| `QUERY` | Entry title, URL, or search term |
+| `-v, --vault` | Vault file path |
+
+**Example:**
+
+```bash
+coalbox totp github -v ~/vault.emberkeys
+# GitHub
+#   TOTP: 482903 (12s remaining)
+```
+
+---
+
+### audit
+
+Check all passwords in the vault against HaveIBeenPwned.
+
+```bash
+coalbox audit [-v <VAULT>]
+```
+
+| Option | Description |
+| --- | --- |
+| `-v, --vault` | Vault file path |
+
+**Example:**
+
+```bash
+coalbox audit -v ~/vault.emberkeys
+# Checking passwords against HaveIBeenPwned...
+#
+# Vault audit complete:
+#   Total entries:       15
+#   Entries with pass:   8
+#
+# ✓ No breached passwords found!
+```
+
+---
+
+### check
+
+Check a single password against HaveIBeenPwned.
+
+```bash
+coalbox check [PASSWORD]
+```
+
+| Argument | Description |
+| --- | --- |
+| `PASSWORD` | Password to check (or `-` to read from stdin) |
+
+**Example:**
+
+```bash
+coalbox check "password123"
+# ⚠ Password found in 12345 data breaches!
+#   Do not use this password.
+```
+
+---
+
 ## Global Options
 
 | Option | Description |

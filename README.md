@@ -13,7 +13,13 @@ Your vault lives on your machine. No account, no server, no internet required. T
 
 ## Install
 
-**Recommended — build from source:**
+**Quick install:**
+
+```bash
+curl -sSf https://thecinderproject.qd.je/coalbox/install.sh | bash
+```
+
+**Build from source:**
 
 ```bash
 git clone https://github.com/SabeeirSharrma/coalbox.git
@@ -49,6 +55,15 @@ coalbox generate -l 32
 # Generate a passphrase
 coalbox generate --passphrase --words 6
 
+# Show TOTP code for an entry
+coalbox totp github -v ~/vault.emberkeys
+
+# Audit vault for breached passwords
+coalbox audit -v ~/vault.emberkeys
+
+# Check a single password
+coalbox check "password123"
+
 # Show vault info
 coalbox info -v ~/vault.emberkeys
 ```
@@ -64,6 +79,8 @@ coalbox info -v ~/vault.emberkeys
 - **Password generator** — character mode with configurable options
 - **Passphrase generator** — EFF wordlist (7776 words), configurable word count
 - **Password history** — previous passwords retained on update
+- **TOTP codes** — RFC 6238, generate 2FA codes from the vault
+- **Breach checking** — HaveIBeenPwned k-anonymity, vault audit
 
 ## Vault Format
 

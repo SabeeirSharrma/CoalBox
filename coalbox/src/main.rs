@@ -3,11 +3,12 @@ use colored::Colorize;
 use std::path::PathBuf;
 
 use coalbox_core::{
-    generate_passphrase, generate_password, Entry, PassphraseConfig, PasswordConfig, Vault,
+    audit_passwords, check_password, generate_passphrase, generate_password, Entry,
+    PassphraseConfig, PasswordConfig, TotpConfig, Vault,
 };
 
 #[derive(Parser)]
-#[command(name = "coalbox", version = "0.2.0", about = "Coalbox password manager")]
+#[command(name = "coalbox", version = "0.3.0", about = "Coalbox password manager")]
 struct Cli {
     #[command(subcommand)]
     command: Commands,
@@ -90,6 +91,29 @@ enum Commands {
         /// Vault file path
         #[arg(short, long)]
         vault: Option<String>,
+    },
+
+    /// Show TOTP code for an entry
+    Totp {
+        /// Entry title or URL to search for
+        query: String,
+
+        /// Vault file path
+        #[arg(short, long)]
+        vault: Option<String>,
+    },
+
+    /// Check passwords against HaveIBeenPwned
+    Audit {
+        /// Vault file path
+        #[arg(short, long)]
+        vault: Option<String>,
+    },
+
+    /// Check a single password against HaveIBeenPwned
+    Check {
+        /// Password to check (or - to read from stdin)
+        password: Option<String>,
     },
 }
 
@@ -440,6 +464,144 @@ fn show_info(vault_path: &Option<String>) {
     println!("KDF:    Argon2id (64MB, 3 iter, 4 parallel)");
 }
 
+fn show_totp(query: &str, vault_path: &Option<String>) {
+    let (vault, _password) = unlock_vault(vault_path);
+
+    let entry = vault
+        .get_entry_by_title(query)
+        .or_else(|_| vault.get_entry_by_url(query))
+        .or_else(|_| {
+            let results = vault.search(query);
+            if results.is_empty() {
+                Err(coalbox_core::CoalboxError::EntryNotFound(query.to_string()))
+            } else {
+                Ok(results.into_iter().next().unwrap())
+            }
+        });
+
+    match entry {
+        Ok(entry) => {
+            if let Some(ref totp_secret) = entry.totp_secret {
+                match TotpConfig::from_secret(totp_secret) {
+                    Ok(config) => {
+                        let code = config.generate_current();
+                        println!("{}", entry.title.bold());
+                        println!();
+                        println!(
+                            "  TOTP: {} ({}s remaining)",
+                            code.code.bold().green(),
+                            code.remaining
+                        );
+                    }
+                    Err(e) => {
+                        eprintln!("{} Invalid TOTP secret: {}", "error:".red().bold(), e);
+                        std::process::exit(1);
+                    }
+                }
+            } else {
+                eprintln!("{} No TOTP configured for this entry", "error:".red().bold());
+                std::process::exit(1);
+            }
+        }
+        Err(e) => {
+            eprintln!("{} {}", "error:".red().bold(), e);
+            std::process::exit(1);
+        }
+    }
+}
+
+fn audit_vault(vault_path: &Option<String>) {
+    let (vault, _password) = unlock_vault(vault_path);
+
+    println!("{}", "Checking passwords against HaveIBeenPwned...".dimmed());
+    println!();
+
+    match vault.list_entries() {
+        Ok(entries) => {
+            match audit_passwords(&entries) {
+                Ok(result) => {
+                    println!("Vault audit complete:");
+                    println!("  Total entries:       {}", result.total_entries);
+                    println!(
+                        "  Entries with pass:   {}",
+                        result.entries_with_passwords
+                    );
+                    println!();
+
+                    if result.breached_entries.is_empty() {
+                        println!(
+                            "{} No breached passwords found!",
+                            "✓".green().bold()
+                        );
+                    } else {
+                        println!(
+                            "{} {} breached passwords found:",
+                            "⚠".red().bold(),
+                            result.breached_entries.len()
+                        );
+                        println!();
+                        for entry in &result.breached_entries {
+                            println!(
+                                "  {} {} — seen {} times in data breaches",
+                                entry.title.bold(),
+                                entry.entry_id.to_string()[..8].dimmed(),
+                                entry.breach_count.to_string().red()
+                            );
+                        }
+                    }
+                }
+                Err(e) => {
+                    eprintln!("{} Audit failed: {}", "error:".red().bold(), e);
+                    std::process::exit(1);
+                }
+            }
+        }
+        Err(e) => {
+            eprintln!("{} {}", "error:".red().bold(), e);
+            std::process::exit(1);
+        }
+    }
+}
+
+fn check_single_password(password: Option<String>) {
+    let pass = match password {
+        Some(p) => {
+            if p == "-" {
+                let mut input = String::new();
+                std::io::stdin()
+                    .read_line(&mut input)
+                    .expect("Failed to read from stdin");
+                input.trim().to_string()
+            } else {
+                p
+            }
+        }
+        None => prompt_password("Enter password to check: "),
+    };
+
+    match check_password(&pass) {
+        Ok(result) => {
+            if result.breached {
+                println!(
+                    "{} Password found in {} data breaches!",
+                    "⚠".red().bold(),
+                    result.count.to_string().red().bold()
+                );
+                println!("  Do not use this password.");
+            } else {
+                println!(
+                    "{} Password not found in any data breaches.",
+                    "✓".green().bold()
+                );
+            }
+        }
+        Err(e) => {
+            eprintln!("{} Breach check failed: {}", "error:".red().bold(), e);
+            std::process::exit(1);
+        }
+    }
+}
+
 fn main() {
     let cli = Cli::parse();
 
@@ -470,5 +632,8 @@ fn main() {
             std::process::exit(1);
         }
         Commands::Info { vault } => show_info(&vault),
+        Commands::Totp { query, vault } => show_totp(&query, &vault),
+        Commands::Audit { vault } => audit_vault(&vault),
+        Commands::Check { password } => check_single_password(password),
     }
 }
