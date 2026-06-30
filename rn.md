@@ -1,29 +1,19 @@
-# v0.6.1 — WebUI
+# v0.6.2 — WebUI Polish
 
 ## What's new
 
-- **WebUI** — beautifully redesigned localhost web interface with TailwindCSS and Lucide icons
-- **REST API** — FIXED - full CRUD for entries, search, generate, TOTP
-- **WebSocket** — FIXED - real-time lock/unlock/entries notifications
-- **Authenticator entries** — separate standalone 2FA entries, with a dedicated tab in the WebUI and animated countdown rings
-- **Single binary** — `coalbox-web` with embedded HTML/CSS/JS frontend
-
-## Usage
-
-```bash
-# Start the WebUI
-coalbox-web --vault ~/vault.emberkeys
-
-# Custom port
-coalbox-web --port 3000
-
-# Don't open browser
-coalbox-web --no-open
-```
-
-## What's not in this release
-
-- Ember Browser integration (v0.7)
+- **Create vault from UI** — form appears when no vault exists
+- **Enter key submits all forms** — unlock, create vault, create/edit entry
+- **Copy from generator** — paste generated password directly into password field
+- **TOTP countdown bar** — visual timer with progress bar
+- **Keyboard shortcuts** — `Ctrl+K` search, `Ctrl+N` new entry, `Esc` close modals
+- **Favourites** — star/unstar entries, filter sidebar by favourites
+- **Tags in sidebar** — filter by tag, badge counts
+- **Import/Export from UI** — import CSV/Bitwarden/KeePass/1Password, export JSON
+- **Clipboard auto-clear** — copy clears after 30 seconds
+- **Vault info panel** — vault stats (path, entries, format, cipher, KDF)
+- **Empty state** — better UX when vault has no entries
+- **Entry type icons** — visual distinction between login, note, card, identity
 
 ## Build from source
 
@@ -31,7 +21,6 @@ coalbox-web --no-open
 git clone https://github.com/SabeeirSharrma/coalbox.git
 cd coalbox
 cargo build --release
-# binaries at target/release/coalbox and target/release/coalbox-web
 ```
 
 Requires Rust 1.85+.

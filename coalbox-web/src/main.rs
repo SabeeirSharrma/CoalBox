@@ -10,8 +10,8 @@ use axum::{
 };
 use clap::Parser;
 use coalbox_core::{
-    generate_passphrase, generate_password, Entry, EntryId, PassphraseConfig, PasswordConfig,
-    TotpConfig, Vault,
+    generate_passphrase, generate_password, Entry, EntryId, ImportFormat, PassphraseConfig,
+    PasswordConfig, TotpConfig, Vault,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -92,11 +92,17 @@ struct UnlockRequest {
     password: String,
 }
 
+#[derive(Deserialize)]
+struct CreateVaultRequest {
+    password: String,
+}
+
 #[derive(Serialize)]
 struct StatusResponse {
     locked: bool,
     entry_count: usize,
     vault_path: String,
+    vault_exists: bool,
 }
 
 #[derive(Deserialize)]
@@ -159,6 +165,13 @@ struct UpdateEntryRequest {
     totp_secret: Option<String>,
 }
 
+#[derive(Deserialize)]
+struct ImportRequest {
+    content: String,
+    format: String,
+    filename: String,
+}
+
 // ── Handlers ─────────────────────────────────────────────────────────
 
 async fn get_status(State(state): State<AppState>) -> Json<ApiResponse<StatusResponse>> {
@@ -167,10 +180,12 @@ async fn get_status(State(state): State<AppState>) -> Json<ApiResponse<StatusRes
         Some(v) => (false, v.vault.entry_count(), v.vault_path.clone()),
         None => (true, 0, state.default_vault_path.clone()),
     };
+    let vault_exists = std::path::Path::new(&vault_path).exists();
     ApiResponse::ok(StatusResponse {
         locked,
         entry_count,
         vault_path,
+        vault_exists,
     })
 }
 
@@ -201,6 +216,7 @@ async fn unlock(
                 locked: false,
                 entry_count,
                 vault_path,
+                vault_exists: true,
             }))
         }
         Err(e) => Err((
@@ -218,7 +234,61 @@ async fn lock(State(state): State<AppState>) -> Json<ApiResponse<StatusResponse>
         locked: true,
         entry_count: 0,
         vault_path: state.default_vault_path.clone(),
+        vault_exists: true,
     })
+}
+
+async fn create_vault(
+    State(state): State<AppState>,
+    Json(req): Json<CreateVaultRequest>,
+) -> Result<Json<ApiResponse<StatusResponse>>, (StatusCode, Json<ApiResponse<()>>)> {
+    let vault_path = {
+        let v = state.vault.read().await;
+        v.as_ref()
+            .map(|v| v.vault_path.clone())
+            .unwrap_or_else(|| state.default_vault_path.clone())
+    };
+
+    let path = std::path::PathBuf::from(shellexpand::tilde(&vault_path).to_string());
+
+    if path.exists() {
+        return Err((
+            StatusCode::CONFLICT,
+            ApiResponse::err("Vault already exists"),
+        ));
+    }
+
+    if let Some(parent) = path.parent()
+        && let Err(e) = std::fs::create_dir_all(parent)
+    {
+        return Err((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            ApiResponse::err(&format!("Failed to create directory: {}", e)),
+        ));
+    }
+
+    match Vault::create(&path, &req.password) {
+        Ok(vault) => {
+            let entry_count = vault.entry_count();
+            let mut v = state.vault.write().await;
+            *v = Some(VaultState {
+                vault,
+                password: req.password,
+                vault_path: vault_path.clone(),
+            });
+            let _ = state.tx.send("unlock".to_string());
+            Ok(ApiResponse::ok(StatusResponse {
+                locked: false,
+                entry_count,
+                vault_path,
+                vault_exists: true,
+            }))
+        }
+        Err(e) => Err((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            ApiResponse::err(&format!("Failed to create vault: {}", e)),
+        )),
+    }
 }
 
 async fn list_entries(
@@ -385,6 +455,35 @@ async fn delete_entry(
     }
 }
 
+async fn toggle_favourite(
+    State(state): State<AppState>,
+    Path(id): Path<String>,
+) -> Result<Json<ApiResponse<Entry>>, (StatusCode, Json<ApiResponse<()>>)> {
+    let entry_id = match EntryId::parse_str(&id) {
+        Ok(id) => id,
+        Err(_) => return Err((StatusCode::BAD_REQUEST, ApiResponse::err("Invalid entry ID"))),
+    };
+    let mut v = state.vault.write().await;
+    match v.as_mut() {
+        Some(vs) => {
+            let _ = vs.vault.update_entry(&entry_id, |entry| {
+                entry.favourite = !entry.favourite;
+            });
+            if let Err(e) = vs.vault.save(&vs.password) {
+                return Err((
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    ApiResponse::err(&format!("Failed to save: {}", e)),
+                ));
+            }
+            match vs.vault.get_entry(&entry_id) {
+                Ok(entry) => Ok(ApiResponse::ok(entry)),
+                Err(e) => Err((StatusCode::NOT_FOUND, ApiResponse::err(&format!("Entry not found: {}", e)))),
+            }
+        }
+        None => Err((StatusCode::UNAUTHORIZED, ApiResponse::err("Vault is locked"))),
+    }
+}
+
 async fn search_entries(
     State(state): State<AppState>,
     Query(q): Query<SearchQuery>,
@@ -423,6 +522,73 @@ async fn generate_password_endpoint(
         generate_password(&config)
     };
     ApiResponse::ok(GeneratedPassword { password })
+}
+
+#[derive(Serialize)]
+struct ImportResult {
+    imported: usize,
+    skipped: usize,
+}
+
+async fn import_entries(
+    State(state): State<AppState>,
+    Json(req): Json<ImportRequest>,
+) -> Result<Json<ApiResponse<ImportResult>>, (StatusCode, Json<ApiResponse<()>>)> {
+    let mut v = state.vault.write().await;
+    match v.as_mut() {
+        Some(vs) => {
+            let format = match req.format.as_str() {
+                "csv" => ImportFormat::Csv,
+                "bitwarden" => ImportFormat::BitwardenJson,
+                "keepass" => ImportFormat::KeePassXml,
+                "1password" => ImportFormat::OnePassword1Pux,
+                _ => {
+                    let ext = std::path::Path::new(&req.filename)
+                        .extension()
+                        .and_then(|e| e.to_str())
+                        .unwrap_or("");
+                    match ext {
+                        "csv" => ImportFormat::Csv,
+                        "xml" => ImportFormat::KeePassXml,
+                        "1pux" => ImportFormat::OnePassword1Pux,
+                        _ => ImportFormat::BitwardenJson,
+                    }
+                }
+            };
+
+            // Write content to temp file
+            let tmp = std::env::temp_dir().join(format!("coalbox_import_{}", &req.filename));
+            if let Err(e) = std::fs::write(&tmp, &req.content) {
+                return Err((StatusCode::INTERNAL_SERVER_ERROR, ApiResponse::err(&format!("Failed to write temp file: {}", e))));
+            }
+
+            let result = coalbox_core::import_file(&tmp, format);
+            let _ = std::fs::remove_file(&tmp);
+
+            match result {
+                Ok(r) => {
+                    let existing: Vec<String> = vs.vault.list_entries().unwrap_or_default()
+                        .iter().map(|e| e.title.to_lowercase()).collect();
+                    let mut imported = 0;
+                    let mut skipped = 0;
+                    for entry in r.entries {
+                        if existing.contains(&entry.title.to_lowercase()) {
+                            skipped += 1;
+                            continue;
+                        }
+                        if vs.vault.add_entry(entry).is_ok() {
+                            imported += 1;
+                        }
+                    }
+                    if imported > 0 { let _ = vs.vault.save(&vs.password); }
+                    let _ = state.tx.send("entries_changed".to_string());
+                    Ok(ApiResponse::ok(ImportResult { imported, skipped }))
+                }
+                Err(e) => Err((StatusCode::BAD_REQUEST, ApiResponse::err(&format!("Import failed: {}", e)))),
+            }
+        }
+        None => Err((StatusCode::UNAUTHORIZED, ApiResponse::err("Vault is locked"))),
+    }
 }
 
 async fn get_totp(
@@ -537,13 +703,16 @@ async fn main() {
     let app = Router::new()
         .route("/", get(serve_index))
         .route("/api/status", get(get_status))
+        .route("/api/vault", post(create_vault))
         .route("/api/unlock", post(unlock))
         .route("/api/lock", post(lock))
         .route("/api/entries", get(list_entries).post(create_entry))
         .route("/api/entries/{id}", get(get_entry).put(update_entry).delete(delete_entry))
+        .route("/api/entries/{id}/favourite", post(toggle_favourite))
+        .route("/api/entries/{id}/totp", get(get_totp))
         .route("/api/search", get(search_entries))
         .route("/api/generate", post(generate_password_endpoint))
-        .route("/api/entries/{id}/totp", get(get_totp))
+        .route("/api/import", post(import_entries))
         .route("/ws", get(ws_handler))
         .layer(cors)
         .layer(TraceLayer::new_for_http())

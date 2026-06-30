@@ -5,81 +5,61 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Coalbox</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         [x-cloak] { display: none !important; }
-        @keyframes totp-pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
-        .totp-urgent { animation: totp-pulse 0.5s ease-in-out infinite; }
-        .totp-ring { transform: rotate(-90deg); }
-        .totp-ring circle.progress {
-            transition: stroke-dashoffset 1s linear;
-        }
-        /* Custom scrollbar */
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #374151;
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #4b5563;
-        }
-        /* Toast animation */
-        @keyframes slideInRight {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-        @keyframes slideOutRight {
-            from { transform: translateX(0); opacity: 1; }
-            to { transform: translateX(100%); opacity: 0; }
-        }
-        .toast-enter { animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        .toast-leave { animation: slideOutRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .totp-bar { transition: width 1s linear; }
     </style>
 </head>
-<body class="h-full font-sans antialiased text-gray-300">
-    <!-- Toast Container -->
-    <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col gap-3"></div>
-
+<body class="h-full">
     <div id="app" class="h-full flex flex-col">
 
-        <!-- Lock Screen -->
-        <div id="lock-screen" class="flex-1 flex items-center justify-center relative overflow-hidden">
-            <!-- Background glow -->
-            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-amber-600/10 blur-[100px] rounded-full pointer-events-none"></div>
-            
-            <div class="w-full max-w-md p-8 bg-gray-900/80 backdrop-blur-xl border border-gray-800 rounded-3xl shadow-2xl relative z-10">
-                <div class="text-center mb-8 flex flex-col items-center">
-                    <div class="w-16 h-16 bg-gradient-to-br from-amber-500/20 to-amber-600/5 text-amber-500 rounded-2xl flex items-center justify-center mb-5 border border-amber-500/20 shadow-inner">
-                        <i data-lucide="shield-check" class="w-8 h-8"></i>
-                    </div>
-                    <h1 class="text-3xl font-bold text-gray-50 tracking-tight">Coalbox</h1>
-                    <p class="text-gray-400 mt-2 text-sm font-medium">Local-first password manager</p>
+        <!-- Lock / Create Screen -->
+        <div id="auth-screen" class="flex-1 flex items-center justify-center">
+            <div class="w-full max-w-sm p-8">
+                <div class="text-center mb-8">
+                    <h1 class="text-3xl font-bold text-amber-400">Coalbox</h1>
+                    <p class="text-gray-500 mt-2 text-sm">Local-first password manager</p>
                 </div>
-                <form id="unlock-form" class="space-y-5">
-                    <div class="relative group">
-                        <i data-lucide="key" class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 group-focus-within:text-amber-500 transition-colors"></i>
-                        <input
-                            type="password"
-                            id="unlock-password"
-                            placeholder="Master password"
-                            class="w-full pl-12 pr-4 py-3.5 bg-gray-950 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 text-gray-100 placeholder-gray-500 transition-all font-medium"
-                            autofocus
-                        >
-                    </div>
+
+                <!-- Unlock form -->
+                <form id="unlock-form" class="space-y-4">
+                    <p id="unlock-subtitle" class="text-center text-sm text-gray-400">Unlock your vault</p>
+                    <input
+                        type="password"
+                        id="unlock-password"
+                        placeholder="Master password"
+                        class="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg focus:outline-none focus:border-amber-500 text-gray-100 placeholder-gray-500"
+                        autofocus
+                    >
                     <button
                         type="submit"
-                        class="w-full py-3.5 bg-amber-600 hover:bg-amber-500 active:bg-amber-700 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 text-gray-50 shadow-lg shadow-amber-600/20 hover:shadow-amber-500/30 outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 focus:ring-offset-gray-900"
+                        class="w-full py-3 bg-amber-600 hover:bg-amber-500 rounded-lg font-medium transition-colors"
+                    >Unlock</button>
+                    <p id="unlock-error" class="text-red-400 text-sm text-center hidden"></p>
+                    <p class="text-center text-xs text-gray-600">No vault? <button type="button" id="show-create" class="text-amber-500 hover:underline">Create one</button></p>
+                </form>
+
+                <!-- Create vault form -->
+                <form id="create-form" class="space-y-4 hidden">
+                    <p class="text-center text-sm text-gray-400">Create a new vault</p>
+                    <input
+                        type="password"
+                        id="create-password"
+                        placeholder="Master password (min 8 chars)"
+                        class="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg focus:outline-none focus:border-amber-500 text-gray-100 placeholder-gray-500"
                     >
-                        <i data-lucide="unlock" class="w-5 h-5"></i>
-                        Unlock Vault
-                    </button>
-                    <p id="unlock-error" class="text-red-400 text-sm text-center hidden font-medium bg-red-500/10 py-2 rounded-lg"></p>
+                    <input
+                        type="password"
+                        id="create-confirm"
+                        placeholder="Confirm password"
+                        class="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg focus:outline-none focus:border-amber-500 text-gray-100 placeholder-gray-500"
+                    >
+                    <button
+                        type="submit"
+                        class="w-full py-3 bg-amber-600 hover:bg-amber-500 rounded-lg font-medium transition-colors"
+                    >Create Vault</button>
+                    <p id="create-error" class="text-red-400 text-sm text-center hidden"></p>
+                    <p class="text-center text-xs text-gray-600">Have a vault? <button type="button" id="show-unlock" class="text-amber-500 hover:underline">Unlock it</button></p>
                 </form>
             </div>
         </div>
@@ -88,205 +68,159 @@
         <div id="main-ui" class="flex-1 flex flex-col hidden">
 
             <!-- Header -->
-            <header class="flex items-center justify-between px-6 py-4 border-b border-gray-800 bg-gray-900/80 backdrop-blur-md z-10 sticky top-0">
-                <div class="flex items-center gap-3">
-                    <div class="w-9 h-9 bg-gradient-to-br from-amber-500/20 to-amber-600/5 text-amber-500 rounded-xl flex items-center justify-center border border-amber-500/20">
-                        <i data-lucide="shield" class="w-5 h-5"></i>
-                    </div>
-                    <h1 class="text-xl font-bold text-gray-50 tracking-tight">Coalbox</h1>
-                    <span id="entry-count" class="text-xs font-semibold text-gray-400 bg-gray-800 px-2.5 py-1 rounded-full ml-1 border border-gray-700"></span>
-                </div>
+            <header class="flex items-center justify-between px-4 py-2 border-b border-gray-800 shrink-0">
+                <h1 class="text-lg font-bold text-amber-400">Coalbox</h1>
                 <div class="flex items-center gap-2">
-                    <button id="btn-generate" class="flex items-center gap-2 text-sm px-4 py-2 bg-gray-800 hover:bg-gray-700 focus:ring-2 focus:ring-gray-600 rounded-lg transition-all font-medium text-gray-200 outline-none border border-gray-700">
-                        <i data-lucide="zap" class="w-4 h-4 text-amber-500"></i> Generate
-                    </button>
-                    <button id="btn-import" class="flex items-center gap-2 text-sm px-4 py-2 bg-gray-800 hover:bg-gray-700 focus:ring-2 focus:ring-gray-600 rounded-lg transition-all font-medium text-gray-200 outline-none border border-gray-700">
-                        <i data-lucide="import" class="w-4 h-4 text-gray-400"></i> Import
-                    </button>
-                    <div class="w-px h-6 bg-gray-800 mx-1"></div>
-                    <button id="btn-lock" class="flex items-center gap-2 text-sm px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 focus:ring-2 focus:ring-red-500/50 rounded-lg transition-all font-medium outline-none border border-red-500/20">
-                        <i data-lucide="lock" class="w-4 h-4"></i> Lock
-                    </button>
+                    <span id="entry-count" class="text-xs text-gray-500"></span>
+                    <button id="btn-import" class="text-xs px-2 py-1 bg-gray-800 hover:bg-gray-700 rounded" title="Import">Import</button>
+                    <button id="btn-export" class="text-xs px-2 py-1 bg-gray-800 hover:bg-gray-700 rounded" title="Export">Export</button>
+                    <button id="btn-info" class="text-xs px-2 py-1 bg-gray-800 hover:bg-gray-700 rounded" title="Vault info">Info</button>
+                    <button id="btn-lock" class="text-xs px-2 py-1 bg-gray-800 hover:bg-gray-700 rounded text-red-400" title="Lock vault">Lock</button>
                 </div>
             </header>
 
-            <div class="flex-1 flex overflow-hidden bg-gray-950">
+            <div class="flex-1 flex overflow-hidden">
 
                 <!-- Sidebar -->
-                <aside class="w-[320px] border-r border-gray-800 flex flex-col bg-gray-900/30">
-                    <div class="flex border-b border-gray-800 p-2 gap-1 bg-gray-900/50">
-                        <button id="tab-vault" class="flex-1 py-1.5 px-3 rounded-lg text-sm font-medium bg-gray-800 text-gray-200 transition-all">Vault</button>
-                        <button id="tab-authenticator" class="flex-1 py-1.5 px-3 rounded-lg text-sm font-medium text-gray-500 hover:text-gray-300 hover:bg-gray-800/50 transition-all">Authenticator</button>
-                    </div>
-                    <div class="p-4 border-b border-gray-800">
-                        <div class="relative group">
-                            <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 group-focus-within:text-amber-500 transition-colors"></i>
-                            <input
-                                type="text"
-                                id="search-input"
-                                placeholder="Search vault..."
-                                class="w-full pl-9 pr-4 py-2.5 bg-gray-950 border border-gray-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 transition-all placeholder-gray-500 font-medium"
-                            >
+                <aside class="w-72 border-r border-gray-800 flex flex-col shrink-0">
+                    <!-- Search -->
+                    <div class="p-2 border-b border-gray-800">
+                        <div class="relative">
+                            <input type="text" id="search-input" placeholder="Search... (Ctrl+K)" class="w-full px-3 py-1.5 bg-gray-900 border border-gray-700 rounded text-sm focus:outline-none focus:border-amber-500 pr-8">
+                            <span class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-600 text-xs">⌘K</span>
                         </div>
                     </div>
-                    <div id="entry-list" class="flex-1 overflow-y-auto p-3 space-y-1.5"></div>
-                    <div class="p-4 border-t border-gray-800 bg-gray-900/50 backdrop-blur-sm">
-                        <button id="btn-add" class="w-full py-2.5 bg-amber-600 hover:bg-amber-500 active:bg-amber-700 rounded-lg text-sm font-semibold transition-all flex items-center justify-center gap-2 text-gray-50 shadow-md shadow-amber-600/10 focus:ring-2 focus:ring-amber-500/50 focus:outline-none">
-                            <i data-lucide="plus" class="w-4 h-4"></i> New Entry
-                        </button>
+
+                    <!-- Filter tabs -->
+                    <div class="flex border-b border-gray-800 text-xs">
+                        <button class="filter-tab flex-1 py-1.5 text-amber-400 border-b-2 border-amber-400" data-filter="all">All</button>
+                        <button class="filter-tab flex-1 py-1.5 text-gray-500 hover:text-gray-300" data-filter="favourites">★ Favs</button>
+                        <button class="filter-tab flex-1 py-1.5 text-gray-500 hover:text-gray-300" data-filter="logins">Keys</button>
+                        <button class="filter-tab flex-1 py-1.5 text-gray-500 hover:text-gray-300" data-filter="notes">Notes</button>
+                    </div>
+
+                    <!-- Tags -->
+                    <div id="tags-bar" class="flex gap-1 px-2 py-1.5 border-b border-gray-800 overflow-x-auto hidden"></div>
+
+                    <!-- Entry list -->
+                    <div id="entry-list" class="flex-1 overflow-y-auto p-1.5 space-y-0.5"></div>
+
+                    <!-- Add button -->
+                    <div class="p-2 border-t border-gray-800">
+                        <button id="btn-add" class="w-full py-1.5 bg-amber-600 hover:bg-amber-500 rounded text-sm font-medium">+ New Entry <span class="text-xs opacity-60 ml-1">Ctrl+N</span></button>
                     </div>
                 </aside>
 
                 <!-- Content -->
-                <main class="flex-1 overflow-y-auto p-8 relative" id="content-area">
-                    <div class="h-full flex flex-col items-center justify-center text-gray-500 space-y-4 select-none">
-                        <div class="w-20 h-20 bg-gray-900/50 rounded-3xl flex items-center justify-center border border-gray-800 shadow-inner">
-                            <i data-lucide="box" class="w-10 h-10 text-gray-700"></i>
-                        </div>
-                        <p class="font-medium text-gray-500 text-sm">Select an entry or create a new one</p>
+                <main class="flex-1 overflow-y-auto p-6" id="content-area">
+                    <div class="text-center text-gray-500 mt-20">
+                        <p class="text-4xl mb-4">🔒</p>
+                        <p class="text-lg">Select an entry</p>
+                        <p class="text-sm mt-1">or press <kbd class="px-1.5 py-0.5 bg-gray-800 rounded text-xs">Ctrl+N</kbd> to create one</p>
                     </div>
                 </main>
             </div>
         </div>
 
         <!-- Modal: Generate -->
-        <div id="modal-generate" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden items-center justify-center z-50">
-            <div class="bg-gray-900 border border-gray-700 rounded-2xl w-full max-w-md p-6 shadow-2xl relative transform transition-all scale-100 opacity-100">
-                <h2 class="text-xl font-bold mb-5 text-gray-50 flex items-center gap-2">
-                    <i data-lucide="zap" class="w-5 h-5 text-amber-500"></i> Generate
-                </h2>
-                <div class="space-y-5">
-                    <div class="flex gap-2 p-1 bg-gray-950 rounded-lg border border-gray-800">
-                        <button id="gen-type-password" class="flex-1 py-2 bg-gray-800 rounded-md text-sm font-medium text-gray-100 shadow-sm transition-all">Password</button>
-                        <button id="gen-type-passphrase" class="flex-1 py-2 hover:bg-gray-800/50 rounded-md text-sm font-medium text-gray-400 transition-all">Passphrase</button>
+        <div id="modal-generate" class="fixed inset-0 bg-black/60 hidden items-center justify-center z-50">
+            <div class="bg-gray-900 border border-gray-700 rounded-xl w-full max-w-md p-6 relative">
+                <h2 class="text-lg font-bold mb-4">Password Generator</h2>
+                <div class="space-y-3">
+                    <div class="flex gap-2">
+                        <button id="gen-type-password" class="flex-1 py-1.5 bg-amber-600 rounded text-sm">Password</button>
+                        <button id="gen-type-passphrase" class="flex-1 py-1.5 bg-gray-800 rounded text-sm">Passphrase</button>
                     </div>
-                    <div id="gen-password-opts" class="space-y-4">
-                        <label class="flex items-center justify-between text-sm">
-                            <span class="font-medium text-gray-300">Length</span>
-                            <input type="number" id="gen-length" value="20" min="8" max="128" class="w-24 px-3 py-1.5 bg-gray-950 border border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 outline-none text-right transition-all">
+                    <div id="gen-password-opts" class="space-y-2">
+                        <label class="flex items-center gap-2 text-sm">
+                            <span class="w-16">Length:</span>
+                            <input type="number" id="gen-length" value="20" min="8" max="128" class="w-20 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-sm">
                         </label>
                     </div>
-                    <div id="gen-passphrase-opts" class="space-y-4 hidden">
-                        <label class="flex items-center justify-between text-sm">
-                            <span class="font-medium text-gray-300">Words</span>
-                            <input type="number" id="gen-words" value="6" min="3" max="12" class="w-24 px-3 py-1.5 bg-gray-950 border border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 outline-none text-right transition-all">
+                    <div id="gen-passphrase-opts" class="space-y-2 hidden">
+                        <label class="flex items-center gap-2 text-sm">
+                            <span class="w-16">Words:</span>
+                            <input type="number" id="gen-words" value="6" min="3" max="12" class="w-20 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-sm">
                         </label>
-                        <label class="flex items-center justify-between text-sm">
-                            <span class="font-medium text-gray-300">Separator</span>
-                            <input type="text" id="gen-separator" value=" " class="w-24 px-3 py-1.5 bg-gray-950 border border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 outline-none text-center transition-all font-mono">
+                        <label class="flex items-center gap-2 text-sm">
+                            <span class="w-16">Separator:</span>
+                            <input type="text" id="gen-separator" value=" " class="w-20 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-sm">
                         </label>
-                        <label class="flex items-center gap-3 text-sm cursor-pointer group">
-                            <div class="relative flex items-center">
-                                <input type="checkbox" id="gen-capitalize" checked class="sr-only peer">
-                                <div class="w-10 h-5 bg-gray-700 rounded-full peer peer-checked:bg-amber-600 transition-colors"></div>
-                                <div class="absolute left-1 top-1 w-3 h-3 bg-white rounded-full peer-checked:translate-x-5 transition-transform"></div>
-                            </div>
-                            <span class="font-medium text-gray-300 group-hover:text-gray-100 transition-colors">Capitalize</span>
+                        <label class="flex items-center gap-2 text-sm">
+                            <input type="checkbox" id="gen-capitalize" checked> Capitalize
                         </label>
-                        <label class="flex items-center gap-3 text-sm cursor-pointer group">
-                            <div class="relative flex items-center">
-                                <input type="checkbox" id="gen-number" class="sr-only peer">
-                                <div class="w-10 h-5 bg-gray-700 rounded-full peer peer-checked:bg-amber-600 transition-colors"></div>
-                                <div class="absolute left-1 top-1 w-3 h-3 bg-white rounded-full peer-checked:translate-x-5 transition-transform"></div>
-                            </div>
-                            <span class="font-medium text-gray-300 group-hover:text-gray-100 transition-colors">Add number</span>
+                        <label class="flex items-center gap-2 text-sm">
+                            <input type="checkbox" id="gen-number"> Add number
                         </label>
                     </div>
-                    
-                    <div class="bg-gray-950 p-4 rounded-xl border border-gray-800 font-mono text-base break-all text-amber-400 text-center shadow-inner relative group" id="gen-result-container">
-                        <span id="gen-result">—</span>
-                    </div>
-                    
-                    <div class="flex gap-3 pt-2">
-                        <button id="gen-refresh" class="flex-1 py-2.5 bg-gray-800 hover:bg-gray-700 rounded-xl text-sm font-medium transition-colors flex items-center justify-center gap-2 outline-none focus:ring-2 focus:ring-gray-600 border border-gray-700">
-                            <i data-lucide="refresh-cw" class="w-4 h-4 text-gray-400"></i> Regenerate
-                        </button>
-                        <button id="gen-copy" class="flex-1 py-2.5 bg-amber-600 hover:bg-amber-500 active:bg-amber-700 rounded-xl text-sm font-semibold text-gray-50 transition-colors flex items-center justify-center gap-2 outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 focus:ring-offset-gray-900 shadow-md shadow-amber-600/20">
-                            <i data-lucide="copy" class="w-4 h-4"></i> Copy
-                        </button>
+                    <div class="bg-gray-800 p-3 rounded font-mono text-sm break-all select-all" id="gen-result">—</div>
+                    <div class="flex gap-2">
+                        <button id="gen-refresh" class="flex-1 py-2 bg-gray-800 hover:bg-gray-700 rounded text-sm">Regenerate</button>
+                        <button id="gen-copy" class="flex-1 py-2 bg-gray-700 hover:bg-gray-600 rounded text-sm">Copy</button>
+                        <button id="gen-use" class="flex-1 py-2 bg-amber-600 hover:bg-amber-500 rounded text-sm hidden">Use</button>
                     </div>
                 </div>
-                <button id="gen-close" class="absolute top-4 right-4 p-2 text-gray-500 hover:text-gray-200 hover:bg-gray-800 rounded-lg transition-colors outline-none focus:ring-2 focus:ring-gray-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+                <button id="gen-close" class="absolute top-3 right-3 text-gray-500 hover:text-gray-300 text-xl">&times;</button>
             </div>
         </div>
 
         <!-- Modal: Add/Edit Entry -->
-        <div id="modal-entry" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden items-center justify-center z-50">
-            <div class="bg-gray-900 border border-gray-700 rounded-2xl w-full max-w-lg p-6 shadow-2xl relative">
-                <h2 id="modal-entry-title" class="text-xl font-bold mb-5 text-gray-50 flex items-center gap-2">
-                    <i data-lucide="file-plus" class="w-5 h-5 text-amber-500" id="modal-entry-icon"></i> 
-                    <span>New Entry</span>
-                </h2>
-                <form id="entry-form" class="space-y-4">
+        <div id="modal-entry" class="fixed inset-0 bg-black/60 hidden items-center justify-center z-50">
+            <div class="bg-gray-900 border border-gray-700 rounded-xl w-full max-w-lg p-6 relative">
+                <h2 id="modal-entry-title" class="text-lg font-bold mb-4">New Entry</h2>
+                <form id="entry-form" class="space-y-3">
                     <input type="hidden" id="entry-id">
-                    
-                    <div class="relative group">
-                        <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-500 group-focus-within:text-amber-500 transition-colors">
-                            <i data-lucide="layout-grid" class="w-4 h-4"></i>
+                    <select id="entry-type" class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded text-sm">
+                        <option value="login">Login</option>
+                        <option value="note">Secure Note</option>
+                    </select>
+                    <input type="text" id="entry-title" placeholder="Title" class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded text-sm" required>
+                    <div id="login-fields">
+                        <input type="text" id="entry-username" placeholder="Username" class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded text-sm mb-2">
+                        <div class="flex gap-1 mb-2">
+                            <input type="text" id="entry-password" placeholder="Password" class="flex-1 px-3 py-2 bg-gray-800 border border-gray-700 rounded text-sm">
+                            <button type="button" id="entry-gen-pw" class="px-3 py-2 bg-gray-700 hover:bg-gray-600 rounded text-sm" title="Generate password">🎲</button>
+                            <button type="button" id="entry-copy-pw" class="px-3 py-2 bg-gray-700 hover:bg-gray-600 rounded text-sm" title="Copy password">📋</button>
                         </div>
-                        <select id="entry-type" class="w-full pl-10 pr-10 py-2.5 bg-gray-950 border border-gray-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 appearance-none font-medium transition-colors">
-                            <option value="login">Login</option>
-                            <option value="note">Secure Note</option>
-                            <option value="authenticator">Authenticator</option>
-                        </select>
-                        <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-gray-500">
-                            <i data-lucide="chevron-down" class="w-4 h-4"></i>
-                        </div>
+                        <input type="text" id="entry-url" placeholder="URL" class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded text-sm mb-2">
+                        <input type="text" id="entry-totp" placeholder="TOTP secret (base32)" class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded text-sm mb-2">
                     </div>
-
-                    <div class="relative group">
-                        <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-500 group-focus-within:text-amber-500 transition-colors">
-                            <i data-lucide="type" class="w-4 h-4"></i>
-                        </div>
-                        <input type="text" id="entry-title" placeholder="Title" class="w-full pl-10 pr-4 py-2.5 bg-gray-950 border border-gray-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 font-medium transition-colors" required>
-                    </div>
-
-                    <div id="login-fields" class="space-y-4">
-                        <div class="relative group">
-                            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-500 group-focus-within:text-amber-500 transition-colors">
-                                <i data-lucide="user" class="w-4 h-4"></i>
-                            </div>
-                            <input type="text" id="entry-username" placeholder="Username / Email" class="w-full pl-10 pr-4 py-2.5 bg-gray-950 border border-gray-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 font-medium transition-colors">
-                        </div>
-                        
-                        <div class="relative group">
-                            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-500 group-focus-within:text-amber-500 transition-colors">
-                                <i data-lucide="key-round" class="w-4 h-4"></i>
-                            </div>
-                            <input type="text" id="entry-password" placeholder="Password" class="w-full pl-10 pr-4 py-2.5 bg-gray-950 border border-gray-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 font-medium font-mono transition-colors">
-                        </div>
-
-                        <div class="relative group">
-                            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-500 group-focus-within:text-amber-500 transition-colors">
-                                <i data-lucide="link" class="w-4 h-4"></i>
-                            </div>
-                            <input type="url" id="entry-url" placeholder="Website URL (https://...)" class="w-full pl-10 pr-4 py-2.5 bg-gray-950 border border-gray-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 font-medium transition-colors">
-                        </div>
-                    </div>
-                    <div class="border border-gray-800 bg-gray-900/40 rounded-xl p-4 mt-2">
-                        <div class="flex items-center gap-2 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
-                            <i data-lucide="scan-line" class="w-4 h-4 text-amber-500"></i> Two-Factor Authentication
-                        </div>
-                        <div class="relative group">
-                            <input type="text" id="entry-totp" placeholder="TOTP Secret (Base32, e.g. JBSWY3DPEHPK3PXP)" class="w-full px-4 py-2.5 bg-gray-950 border border-gray-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 font-medium font-mono transition-colors">
-                        </div>
-                        <p class="text-xs text-gray-500 mt-2">Optional: Add a 2FA secret to generate one-time passwords automatically.</p>
-                    </div>
-                    <div class="relative group">
-                        <div class="absolute top-3 left-3 pointer-events-none text-gray-500 group-focus-within:text-amber-500 transition-colors">
-                            <i data-lucide="align-left" class="w-4 h-4"></i>
-                        </div>
-                        <textarea id="entry-notes" placeholder="Secure Notes" rows="3" class="w-full pl-10 pr-4 py-2.5 bg-gray-950 border border-gray-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 font-medium transition-colors resize-y"></textarea>
-                    </div>
-
-                    <div class="flex gap-3 pt-3 mt-4 border-t border-gray-800">
-                        <button type="button" id="entry-cancel" class="flex-1 py-2.5 bg-gray-800 hover:bg-gray-700 rounded-xl text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-gray-600 border border-gray-700">Cancel</button>
-                        <button type="submit" class="flex-1 py-2.5 bg-amber-600 hover:bg-amber-500 active:bg-amber-700 rounded-xl text-sm font-semibold text-gray-50 transition-colors shadow-md shadow-amber-600/20 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 focus:ring-offset-gray-900 flex justify-center items-center gap-2">
-                            <i data-lucide="save" class="w-4 h-4"></i> Save Entry
-                        </button>
+                    <textarea id="entry-notes" placeholder="Notes" rows="3" class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded text-sm"></textarea>
+                    <div class="flex gap-2 pt-1">
+                        <button type="submit" class="flex-1 py-2 bg-amber-600 hover:bg-amber-500 rounded text-sm font-medium">Save</button>
+                        <button type="button" id="entry-cancel" class="flex-1 py-2 bg-gray-800 hover:bg-gray-700 rounded text-sm">Cancel</button>
                     </div>
                 </form>
-                <button id="entry-modal-close" class="absolute top-4 right-4 p-2 text-gray-500 hover:text-gray-200 hover:bg-gray-800 rounded-lg transition-colors outline-none focus:ring-2 focus:ring-gray-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+                <button id="entry-modal-close" class="absolute top-3 right-3 text-gray-500 hover:text-gray-300 text-xl">&times;</button>
+            </div>
+        </div>
+
+        <!-- Modal: Vault Info -->
+        <div id="modal-info" class="fixed inset-0 bg-black/60 hidden items-center justify-center z-50">
+            <div class="bg-gray-900 border border-gray-700 rounded-xl w-full max-w-sm p-6 relative">
+                <h2 class="text-lg font-bold mb-4">Vault Info</h2>
+                <div id="info-content" class="space-y-2 text-sm"></div>
+                <button onclick="hideModal('modal-info')" class="absolute top-3 right-3 text-gray-500 hover:text-gray-300 text-xl">&times;</button>
+            </div>
+        </div>
+
+        <!-- Modal: Import -->
+        <div id="modal-import" class="fixed inset-0 bg-black/60 hidden items-center justify-center z-50">
+            <div class="bg-gray-900 border border-gray-700 rounded-xl w-full max-w-md p-6 relative">
+                <h2 class="text-lg font-bold mb-4">Import Entries</h2>
+                <div class="space-y-3">
+                    <input type="file" id="import-file" accept=".csv,.json,.xml,.1pux" class="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:bg-amber-600 file:text-white hover:file:bg-amber-500">
+                    <select id="import-format" class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded text-sm">
+                        <option value="auto">Auto-detect</option>
+                        <option value="csv">CSV</option>
+                        <option value="bitwarden">Bitwarden JSON</option>
+                        <option value="keepass">KeePass XML</option>
+                        <option value="1password">1Password 1PUX</option>
+                    </select>
+                    <div id="import-result" class="text-sm hidden"></div>
+                    <button id="import-submit" class="w-full py-2 bg-amber-600 hover:bg-amber-500 rounded text-sm font-medium">Import</button>
+                </div>
+                <button onclick="hideModal('modal-import')" class="absolute top-3 right-3 text-gray-500 hover:text-gray-300 text-xl">&times;</button>
             </div>
         </div>
     </div>
@@ -295,483 +229,386 @@
     // ── State ──────────────────────────────────────────────────────
     let entries = [];
     let selectedId = null;
+    let activeFilter = 'all';
+    let activeTag = null;
     let ws = null;
     let genType = 'password';
-    let activeTab = 'vault';
+    let genTargetField = null;
+    let totpInterval = null;
+    let clipboardTimer = null;
 
-    // ── Icons Init ─────────────────────────────────────────────────
-    function renderIcons() {
-        if (window.lucide) {
-            lucide.createIcons();
-        }
-    }
-    
-    // Call once on load
-    document.addEventListener('DOMContentLoaded', renderIcons);
-
-    // ── Toasts ─────────────────────────────────────────────────────
-    function showToast(message, type = 'success') {
-        const container = document.getElementById('toast-container');
-        const toast = document.createElement('div');
-        
-        const icon = type === 'success' ? 'check-circle-2' : type === 'error' ? 'alert-circle' : 'info';
-        const colorClass = type === 'success' ? 'text-green-400' : type === 'error' ? 'text-red-400' : 'text-amber-400';
-        const borderClass = type === 'success' ? 'border-green-500/20' : type === 'error' ? 'border-red-500/20' : 'border-amber-500/20';
-        const bgClass = type === 'success' ? 'bg-green-500/10' : type === 'error' ? 'bg-red-500/10' : 'bg-amber-500/10';
-        
-        toast.className = `toast-enter flex items-center gap-3 px-4 py-3 bg-gray-900 border ${borderClass} rounded-xl shadow-lg shadow-black/50 backdrop-blur-md`;
-        
-        toast.innerHTML = `
-            <div class="flex-shrink-0 w-8 h-8 rounded-full ${bgClass} flex items-center justify-center ${colorClass}">
-                <i data-lucide="${icon}" class="w-5 h-5"></i>
-            </div>
-            <p class="text-sm font-medium text-gray-100">${esc(message)}</p>
-        `;
-        
-        container.appendChild(toast);
-        renderIcons(); // Render the new icon
-        
-        setTimeout(() => {
-            toast.classList.replace('toast-enter', 'toast-leave');
-            setTimeout(() => toast.remove(), 300); // Remove after animation
-        }, 3000);
-    }
-
-    // ── API helpers ────────────────────────────────────────────────
+    // ── API ────────────────────────────────────────────────────────
     const api = {
-        async get(url) {
-            const r = await fetch(url);
-            return r.json();
-        },
-        async post(url, body) {
-            const r = await fetch(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(body)
-            });
-            return r.json();
-        },
-        async put(url, body) {
-            const r = await fetch(url, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(body)
-            });
-            return r.json();
-        },
-        async del(url) {
-            const r = await fetch(url, { method: 'DELETE' });
-            return r.json();
-        }
+        async get(u) { return (await fetch(u)).json(); },
+        async post(u, b) { return (await fetch(u, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(b) })).json(); },
+        async put(u, b) { return (await fetch(u, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(b) })).json(); },
+        async del(u) { return (await fetch(u, { method: 'DELETE' })).json(); }
     };
+
+    // ── Clipboard with auto-clear ──────────────────────────────────
+    async function copyText(text, autoClear = true) {
+        await navigator.clipboard.writeText(text);
+        if (autoClear) {
+            clearTimeout(clipboardTimer);
+            clipboardTimer = setTimeout(() => navigator.clipboard.writeText(''), 30000);
+        }
+    }
 
     // ── WebSocket ──────────────────────────────────────────────────
     function connectWs() {
         const proto = location.protocol === 'https:' ? 'wss' : 'ws';
         ws = new WebSocket(`${proto}://${location.host}/ws`);
         ws.onmessage = (e) => {
-            if (e.data === 'unlock') {
-                loadEntries();
-                showMain();
-            } else if (e.data === 'lock') {
-                showLock();
-            } else if (e.data === 'entries_changed') {
-                loadEntries();
-            }
+            if (e.data === 'unlock') { loadEntries(); showMain(); }
+            else if (e.data === 'lock') { showAuth(); }
+            else if (e.data === 'entries_changed') { loadEntries(); }
         };
         ws.onclose = () => setTimeout(connectWs, 2000);
     }
 
     // ── UI state ───────────────────────────────────────────────────
-    function showLock() {
-        document.getElementById('lock-screen').classList.remove('hidden');
-        document.getElementById('lock-screen').classList.add('flex');
+    function showAuth() {
+        document.getElementById('auth-screen').classList.remove('hidden');
+        document.getElementById('auth-screen').classList.add('flex');
         document.getElementById('main-ui').classList.add('hidden');
         document.getElementById('unlock-password').value = '';
         document.getElementById('unlock-error').classList.add('hidden');
-        entries = [];
-        selectedId = null;
-        stopTotpAutoRefresh();
+        document.getElementById('create-form').classList.add('hidden');
+        document.getElementById('unlock-form').classList.remove('hidden');
+        entries = []; selectedId = null;
         renderList();
+        clearInterval(totpInterval);
     }
 
     function showMain() {
-        document.getElementById('lock-screen').classList.add('hidden');
-        document.getElementById('lock-screen').classList.remove('flex');
+        document.getElementById('auth-screen').classList.add('hidden');
+        document.getElementById('auth-screen').classList.remove('flex');
         document.getElementById('main-ui').classList.remove('hidden');
     }
 
-    // Escaper
-    function esc(str) {
-        if (!str) return '';
-        const div = document.createElement('div');
-        div.textContent = str;
-        return div.innerHTML;
-    }
+    // ── Modals ─────────────────────────────────────────────────────
+    function showModal(id) { document.getElementById(id).classList.remove('hidden'); document.getElementById(id).classList.add('flex'); }
+    window.hideModal = function(id) { document.getElementById(id).classList.add('hidden'); document.getElementById(id).classList.remove('flex'); };
 
     // ── Entries ────────────────────────────────────────────────────
     async function loadEntries() {
         const res = await api.get('/api/entries');
         if (res.ok) {
             entries = res.data;
-            document.getElementById('entry-count').textContent = entries.length;
-            renderList(document.getElementById('search-input').value);
-            
-            // Re-render currently selected entry if it exists to update UI
-            if (selectedId && entries.find(e => e.id === selectedId)) {
-                selectEntry(selectedId, true);
-            }
+            document.getElementById('entry-count').textContent = `${entries.length} entries`;
+            renderTags();
+            renderList();
         }
+    }
+
+    function renderTags() {
+        const tagMap = {};
+        entries.forEach(e => (e.tags || []).forEach(t => { tagMap[t] = (tagMap[t] || 0) + 1; }));
+        const bar = document.getElementById('tags-bar');
+        const tags = Object.entries(tagMap).sort((a, b) => b[1] - a[1]);
+        if (tags.length === 0) { bar.classList.add('hidden'); return; }
+        bar.classList.remove('hidden');
+        bar.innerHTML = tags.map(([t, c]) =>
+            `<button class="tag-btn shrink-0 px-2 py-0.5 rounded text-xs ${activeTag === t ? 'bg-amber-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'}" data-tag="${esc(t)}">${esc(t)} <span class="opacity-60">${c}</span></button>`
+        ).join('') + `<button class="tag-btn shrink-0 px-2 py-0.5 rounded text-xs ${activeTag === null ? 'bg-amber-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'}" data-tag="">all</button>`;
+        bar.querySelectorAll('.tag-btn').forEach(b => b.onclick = () => { activeTag = b.dataset.tag || null; renderList(); renderTags(); });
     }
 
     function renderList(filter = '') {
         const list = document.getElementById('entry-list');
         const q = filter.toLowerCase();
-        let filtered = entries.filter(e =>
-            e.title.toLowerCase().includes(q) ||
-            (e.username && e.username.toLowerCase().includes(q)) ||
-            (e.url && e.url.toLowerCase().includes(q))
-        );
-        
-        if (activeTab === 'authenticator') {
-            filtered = filtered.filter(e => e.entry_type === 'authenticator');
-        } else {
-            filtered = filtered.filter(e => e.entry_type !== 'authenticator');
-        }
-
-        list.innerHTML = filtered.map(e => {
-            const iconMap = { login: 'key', note: 'file-text', card: 'credit-card', identity: 'user', authenticator: 'scan-line' };
-            const iconName = iconMap[e.entry_type] || 'key';
-            const isSelected = e.id === selectedId;
-            
-            const bgClass = isSelected ? 'bg-amber-500/10 border-amber-500/50' : 'bg-gray-900 border-gray-800 hover:border-gray-700 hover:bg-gray-800/50';
-            const iconColor = isSelected ? 'text-amber-500' : 'text-gray-400';
-            const titleColor = isSelected ? 'text-amber-500 font-semibold' : 'text-gray-200 font-medium';
-            
-            return `
-                <div class="entry-item p-3.5 rounded-xl border transition-all cursor-pointer ${bgClass} group" data-id="${e.id}">
-                    <div class="flex items-center gap-3 overflow-hidden">
-                        <div class="w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center bg-gray-950 border border-gray-800 group-hover:border-gray-700 transition-colors">
-                            <i data-lucide="${iconName}" class="w-4 h-4 ${iconColor}"></i>
-                        </div>
-                        <div class="flex-1 min-w-0">
-                            <div class="text-sm truncate ${titleColor}">${esc(e.title)}</div>
-                            ${e.username ? `<div class="text-xs text-gray-500 truncate mt-0.5">${esc(e.username)}</div>` : ''}
-                        </div>
-                    </div>
-                </div>
-            `;
-        }).join('');
-
-        list.querySelectorAll('.entry-item').forEach(el => {
-            el.onclick = () => selectEntry(el.dataset.id);
+        let filtered = entries.filter(e => {
+            if (q && !e.title.toLowerCase().includes(q) && !(e.username || '').toLowerCase().includes(q) && !(e.url || '').toLowerCase().includes(q)) return false;
+            if (activeFilter === 'favourites' && !e.favourite) return false;
+            if (activeFilter === 'logins' && e.entry_type !== 'login') return false;
+            if (activeFilter === 'notes' && e.entry_type !== 'note') return false;
+            if (activeTag && !(e.tags || []).includes(activeTag)) return false;
+            return true;
         });
-        
-        renderIcons();
+
+        if (filtered.length === 0 && entries.length > 0) {
+            list.innerHTML = '<div class="text-center text-gray-600 text-sm mt-8">No entries match</div>';
+        } else if (entries.length === 0) {
+            list.innerHTML = '<div class="text-center text-gray-600 text-sm mt-8">No entries yet.<br>Press <kbd class="px-1 py-0.5 bg-gray-800 rounded text-xs">Ctrl+N</kbd></div>';
+        } else {
+            list.innerHTML = filtered.map(e => {
+                const icons = { login: '🔑', note: '📝', card: '💳', identity: '👤' };
+                const icon = icons[e.entry_type] || '🔑';
+                const sel = e.id === selectedId ? 'bg-gray-800 border-amber-600' : 'border-transparent hover:border-gray-700';
+                const fav = e.favourite ? '<span class="text-amber-400 text-xs ml-auto shrink-0">★</span>' : '';
+                return `<div class="entry-item flex items-center gap-2 px-2 py-1.5 rounded border cursor-pointer ${sel} group" data-id="${e.id}">
+                    <span class="text-sm shrink-0">${icon}</span>
+                    <span class="text-sm truncate flex-1">${esc(e.title)}</span>
+                    ${fav}
+                </div>`;
+            }).join('');
+            list.querySelectorAll('.entry-item').forEach(el => el.onclick = () => selectEntry(el.dataset.id));
+        }
     }
 
-    async function selectEntry(id, skipRenderList = false) {
+    async function selectEntry(id) {
         selectedId = id;
-        stopTotpAutoRefresh();
-        
-        if (!skipRenderList) {
-            renderList(document.getElementById('search-input').value);
-        }
-        
+        renderList(document.getElementById('search-input').value);
         const res = await api.get(`/api/entries/${id}`);
         if (!res.ok) return;
         const e = res.data;
         const area = document.getElementById('content-area');
-        const typeLabel = { login: 'Login', note: 'Secure Note', card: 'Payment Card', identity: 'Identity', authenticator: 'Authenticator' }[e.entry_type] || 'Entry';
-        const typeIcon = { login: 'key', note: 'file-text', card: 'credit-card', identity: 'user', authenticator: 'scan-line' }[e.entry_type] || 'key';
+        const typeLabel = { login: 'Login', note: 'Secure Note', card: 'Payment Card', identity: 'Identity' }[e.entry_type] || 'Entry';
+        const favBtn = e.favourite
+            ? `<button onclick="toggleFav('${e.id}')" class="text-amber-400 text-lg" title="Remove from favourites">★</button>`
+            : `<button onclick="toggleFav('${e.id}')" class="text-gray-600 hover:text-amber-400 text-lg" title="Add to favourites">☆</button>`;
 
-        let html = `
-            <div class="max-w-2xl mx-auto pb-10">
-                <div class="flex items-start justify-between mb-8 pb-6 border-b border-gray-800">
-                    <div class="flex items-center gap-4">
-                        <div class="w-14 h-14 bg-gray-900 rounded-2xl flex items-center justify-center border border-gray-800 text-gray-400">
-                            <i data-lucide="${typeIcon}" class="w-7 h-7"></i>
-                        </div>
-                        <div>
-                            <h2 class="text-2xl font-bold text-gray-50 tracking-tight">${esc(e.title)}</h2>
-                            <span class="text-sm font-medium text-amber-500/80 bg-amber-500/10 px-2.5 py-0.5 rounded-full inline-block mt-2 border border-amber-500/20">${typeLabel}</span>
-                        </div>
-                    </div>
-                    <div class="flex gap-2">
-                        <button onclick="editEntry('${e.id}')" class="px-4 py-2 bg-gray-900 hover:bg-gray-800 border border-gray-800 hover:border-gray-700 rounded-xl text-sm font-medium transition-all flex items-center gap-2 text-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-700">
-                            <i data-lucide="edit-2" class="w-4 h-4"></i> Edit
-                        </button>
-                        <button onclick="deleteEntry('${e.id}')" class="px-4 py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 hover:border-red-500/30 rounded-xl text-sm font-medium text-red-400 hover:text-red-300 transition-all flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-red-500/50">
-                            <i data-lucide="trash-2" class="w-4 h-4"></i> Delete
-                        </button>
+        let html = `<div class="max-w-2xl">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-2">
+                    ${favBtn}
+                    <div>
+                        <h2 class="text-xl font-bold">${esc(e.title)}</h2>
+                        <span class="text-xs text-gray-500">${typeLabel}${(e.tags||[]).length ? ' · ' + e.tags.join(', ') : ''}</span>
                     </div>
                 </div>
-                
-                <div class="space-y-4">
-        `;
-
-        if (e.username) {
-            html += fieldRow('Username / Email', e.username, 'user', e.username);
-        }
-        if (e.password) {
-            html += fieldRow('Password', '••••••••••••••••', 'key-round', e.password, false, true);
-        }
-        if (e.url) {
-            html += fieldRow('Website URL', e.url, 'link', e.url, true);
-        }
-        
-        if (e.totp_secret) {
-            html += `
-                <div class="bg-gray-900/50 border border-gray-800 rounded-2xl p-5 relative overflow-hidden group" id="totp-container">
-                    <div class="absolute top-0 left-0 w-1 h-full bg-amber-500 rounded-l-2xl opacity-50"></div>
-                    <div class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4 flex items-center gap-2">
-                        <i data-lucide="scan-line" class="w-4 h-4 text-amber-500"></i> Authenticator Code
-                    </div>
-                    <div class="flex items-center gap-5">
-                        <div class="relative">
-                            <svg class="totp-ring" width="56" height="56" viewBox="0 0 56 56">
-                                <circle cx="28" cy="28" r="24" fill="none" stroke="#1f2937" stroke-width="4"/>
-                                <circle class="progress" id="totp-ring-progress" cx="28" cy="28" r="24" fill="none" stroke="#f59e0b" stroke-width="4" stroke-linecap="round"
-                                    stroke-dasharray="150.79" stroke-dashoffset="0"/>
-                            </svg>
-                            <div class="absolute inset-0 flex items-center justify-center font-bold text-xs text-gray-400" id="totp-remaining">--</div>
-                        </div>
-                        <div class="flex-1">
-                            <div id="totp-code" class="text-4xl font-mono font-bold text-gray-100 tracking-[0.2em] filter drop-shadow-md cursor-pointer hover:text-amber-400 transition-colors" onclick="copyTotpCode()">------</div>
-                        </div>
-                        <button onclick="copyTotpCode()" class="flex items-center justify-center w-10 h-10 bg-gray-800 hover:bg-amber-600 hover:text-white rounded-xl transition-all text-gray-400 border border-gray-700 group-hover:border-gray-600 focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-sm" title="Copy code">
-                            <i data-lucide="copy" class="w-4 h-4"></i>
-                        </button>
-                    </div>
-                </div>
-            `;
-            startTotpAutoRefresh(e.id);
-        }
-
-        if (e.notes) {
-            html += `
-                <div class="bg-gray-900/50 border border-gray-800 rounded-2xl p-5">
-                    <div class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-2">
-                        <i data-lucide="align-left" class="w-4 h-4"></i> Secure Notes
-                    </div>
-                    <div class="text-sm text-gray-300 font-mono whitespace-pre-wrap leading-relaxed overflow-x-auto">${esc(e.notes)}</div>
-                </div>
-            `;
-        }
-
-        html += `
-                </div>
-                <div class="mt-10 pt-6 border-t border-gray-800/50 text-xs font-medium text-gray-600 flex justify-between items-center bg-gray-950 rounded-xl px-4 py-3">
-                    <div class="flex items-center gap-2"><i data-lucide="clock" class="w-3.5 h-3.5"></i> Created: ${new Date(e.created).toLocaleString()}</div>
-                    <div class="flex items-center gap-2"><i data-lucide="history" class="w-3.5 h-3.5"></i> Modified: ${new Date(e.modified).toLocaleString()}</div>
+                <div class="flex gap-2">
+                    <button onclick="editEntry('${e.id}')" class="px-3 py-1 bg-gray-800 hover:bg-gray-700 rounded text-sm">Edit</button>
+                    <button onclick="deleteEntry('${e.id}')" class="px-3 py-1 bg-gray-800 hover:bg-red-900 rounded text-sm text-red-400">Delete</button>
                 </div>
             </div>`;
 
+        if (e.username) html += fieldRow('Username', e.username, `<span class="text-sm">${esc(e.username)}</span>`, e.username);
+        if (e.password) html += fieldRow('Password', 'Password', `<span class="text-sm font-mono">${'•'.repeat(Math.min(e.password.length, 20))}</span>`, e.password);
+        if (e.url) html += fieldRow('URL', 'URL', `<a href="${esc(e.url)}" target="_blank" class="text-amber-400 hover:underline text-sm">${esc(e.url)}</a>`, e.url);
+        if (e.notes) html += `<div class="mb-3"><div class="text-xs text-gray-500 mb-1">Notes</div><div class="text-sm bg-gray-900 p-3 rounded whitespace-pre-wrap">${esc(e.notes)}</div></div>`;
+
+        if (e.totp_secret) {
+            html += `<div class="mb-3">
+                <div class="text-xs text-gray-500 mb-1">TOTP</div>
+                <div class="flex items-center gap-3 bg-gray-900 p-3 rounded">
+                    <span id="totp-code" class="text-2xl font-mono text-amber-400 tracking-widest">------</span>
+                    <div class="flex-1">
+                        <div class="h-1.5 bg-gray-800 rounded-full overflow-hidden"><div id="totp-bar" class="h-full bg-amber-500 totp-bar" style="width:100%"></div></div>
+                        <span id="totp-remaining" class="text-xs text-gray-500 mt-0.5 block"></span>
+                    </div>
+                    <button onclick="refreshTotp('${e.id}')" class="text-sm px-2 py-1 bg-gray-800 rounded">↻</button>
+                </div>
+            </div>`;
+            startTotpTimer(e.id);
+        }
+
+        html += `<div class="text-xs text-gray-600 mt-6">
+            Created: ${fmtDate(e.created)} · Modified: ${fmtDate(e.modified)}
+        </div></div>`;
         area.innerHTML = html;
-        renderIcons();
     }
 
-    function fieldRow(label, display, icon, copyVal, isLink = false, isPassword = false) {
-        const copyBtn = copyVal
-            ? `<button onclick="copyText('${esc(copyVal)}', '${esc(label)}') " class="flex-shrink-0 w-9 h-9 flex items-center justify-center bg-gray-800 hover:bg-amber-600 hover:text-white hover:border-amber-500 text-gray-400 rounded-lg transition-all border border-gray-700 focus:outline-none focus:ring-2 focus:ring-amber-500" title="Copy ${label}">
-                 <i data-lucide="copy" class="w-4 h-4"></i>
-               </button>`
-            : '';
-            
-        const val = isLink
-            ? `<a href="${esc(display)}" target="_blank" class="text-amber-400 hover:text-amber-300 hover:underline flex items-center gap-1"><i data-lucide="external-link" class="w-3.5 h-3.5"></i> ${esc(display)}</a>`
-            : `<span class="text-base text-gray-200 font-medium ${isPassword ? 'font-mono tracking-widest text-lg translate-y-[2px]' : ''}">${display}</span>`;
-            
-        return `
-            <div class="group flex items-center justify-between bg-gray-900/50 hover:bg-gray-900 border border-gray-800 hover:border-gray-700 p-4 rounded-2xl transition-all shadow-sm">
-                <div class="flex items-center gap-4 flex-1 min-w-0">
-                    <div class="w-10 h-10 rounded-xl bg-gray-950 flex items-center justify-center border border-gray-800 text-gray-500 group-hover:text-amber-500 transition-colors shadow-inner">
-                        <i data-lucide="${icon}" class="w-5 h-5"></i>
-                    </div>
-                    <div class="flex-1 min-w-0">
-                        <div class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">${label}</div>
-                        <div class="truncate">${val}</div>
-                    </div>
-                </div>
-                <div class="pl-4 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity flex items-center gap-2">
-                    ${copyBtn}
-                </div>
-            </div>
-        `;
+    function fieldRow(label, tooltip, display, copyVal) {
+        return `<div class="mb-3 flex items-center justify-between bg-gray-900 p-3 rounded group">
+            <div class="min-w-0"><div class="text-xs text-gray-500 mb-0.5">${label}</div>${display}</div>
+            ${copyVal ? `<button onclick="copyText('${esc(copyVal).replace(/'/g, "\\'")}')" class="text-xs px-2 py-1 bg-gray-800 rounded hover:bg-gray-700 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 ml-2">Copy</button>` : ''}
+        </div>`;
     }
+
+    async function toggleFav(id) {
+        const res = await api.post(`/api/entries/${id}/favourite`);
+        if (res.ok) { await loadEntries(); selectEntry(id); }
+    }
+    window.toggleFav = toggleFav;
 
     async function refreshTotp(id) {
         const res = await api.get(`/api/entries/${id}/totp`);
         if (res.ok) {
-            const codeEl = document.getElementById('totp-code');
-            const remainEl = document.getElementById('totp-remaining');
-            const ringEl = document.getElementById('totp-ring-progress');
-            const container = document.getElementById('totp-container');
-            
-            if (codeEl) {
-                const code = res.data.code;
-                codeEl.textContent = code.slice(0, 3) + ' ' + code.slice(3);
-            }
-            if (remainEl) {
-                const remaining = parseInt(res.data.remaining);
-                remainEl.textContent = remaining;
-                if (container) {
-                    if (remaining <= 5) {
-                        container.classList.add('totp-urgent');
-                        container.querySelector('.absolute.bg-amber-500').classList.replace('bg-amber-500', 'bg-red-500');
-                    } else {
-                        container.classList.remove('totp-urgent');
-                        container.querySelector('.absolute').classList.replace('bg-red-500', 'bg-amber-500');
-                    }
-                }
-            }
-            if (ringEl) {
-                const remaining = parseInt(res.data.remaining);
-                const circumference = 150.79; // 2 * PI * 24
-                const fraction = remaining / 30;
-                ringEl.style.strokeDashoffset = circumference * (1 - fraction);
-                if (remaining <= 5) {
-                    ringEl.setAttribute('stroke', '#ef4444');
-                } else if (remaining <= 10) {
-                    ringEl.setAttribute('stroke', '#f97316');
-                } else {
-                    ringEl.setAttribute('stroke', '#f59e0b');
-                }
-            }
+            document.getElementById('totp-code').textContent = res.data.code;
+            const remaining = parseInt(res.data.remaining);
+            document.getElementById('totp-remaining').textContent = `${remaining}s`;
+            document.getElementById('totp-bar').style.width = `${(remaining / 30) * 100}%`;
         }
     }
 
-    async function copyText(text, label = "Item") {
-        await navigator.clipboard.writeText(text);
-        showToast(`${label} copied to clipboard`);
+    function startTotpTimer(id) {
+        clearInterval(totpInterval);
+        let remaining = 30;
+        refreshTotp(id);
+        totpInterval = setInterval(() => {
+            remaining--;
+            if (remaining <= 0) { remaining = 30; refreshTotp(id); }
+            const bar = document.getElementById('totp-bar');
+            const rem = document.getElementById('totp-remaining');
+            if (bar) bar.style.width = `${(remaining / 30) * 100}%`;
+            if (rem) rem.textContent = `${remaining}s`;
+        }, 1000);
     }
 
-    // ── TOTP auto-refresh ─────────────────────────────────────────
-    let totpInterval = null;
-    let currentTotpEntryId = null;
+    // ── Helpers ────────────────────────────────────────────────────
+    function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+    function fmtDate(s) { return new Date(s).toLocaleString(); }
 
-    function stopTotpAutoRefresh() {
-        if (totpInterval) {
-            clearInterval(totpInterval);
-            totpInterval = null;
-        }
-        currentTotpEntryId = null;
+    // ── Entry CRUD ─────────────────────────────────────────────────
+    window.editEntry = async (id) => {
+        const res = await api.get(`/api/entries/${id}`);
+        if (!res.ok) return;
+        const e = res.data;
+        document.getElementById('modal-entry-title').textContent = 'Edit Entry';
+        document.getElementById('entry-id').value = e.id;
+        document.getElementById('entry-type').value = e.entry_type;
+        document.getElementById('entry-title').value = e.title;
+        document.getElementById('entry-username').value = e.username || '';
+        document.getElementById('entry-password').value = e.password || '';
+        document.getElementById('entry-url').value = e.url || '';
+        document.getElementById('entry-totp').value = e.totp_secret || '';
+        document.getElementById('entry-notes').value = e.notes || '';
+        updateEntryTypeFields();
+        showModal('modal-entry');
+    };
+
+    window.deleteEntry = async (id) => {
+        if (!confirm('Delete this entry?')) return;
+        await api.del(`/api/entries/${id}`);
+        selectedId = null;
+        document.getElementById('content-area').innerHTML = '<div class="text-center text-gray-500 mt-20"><p class="text-4xl mb-4">🔒</p><p>Select an entry</p></div>';
+        await loadEntries();
+    };
+
+    function updateEntryTypeFields() {
+        document.getElementById('login-fields').classList.toggle('hidden', document.getElementById('entry-type').value === 'note');
     }
 
-    function startTotpAutoRefresh(entryId) {
-        stopTotpAutoRefresh();
-        currentTotpEntryId = entryId;
-        refreshTotp(entryId);
-        totpInterval = setInterval(() => refreshTotp(entryId), 1000);
-    }
-
-    async function copyTotpCode() {
-        const codeEl = document.getElementById('totp-code');
-        if (codeEl && codeEl.textContent !== '------') {
-            await copyText(codeEl.textContent.replace(' ', ''), 'Authenticator code');
-        }
-    }
-
-    // ── Modals ─────────────────────────────────────────────────────
-    function showModal(id) {
-        document.getElementById(id).classList.remove('hidden');
-        document.getElementById(id).classList.add('flex');
-        
-        // Small delay to allow display block to apply before animating opacity/transform
-        setTimeout(() => {
-            const inner = document.getElementById(id).querySelector('div');
-            if(inner) {
-                inner.classList.remove('scale-95', 'opacity-0');
-                inner.classList.add('scale-100', 'opacity-100');
-            }
-        }, 10);
-    }
-    
-    function hideModal(id) {
-        const modal = document.getElementById(id);
-        const inner = modal.querySelector('div');
-        
-        if(inner) {
-            inner.classList.remove('scale-100', 'opacity-100');
-            inner.classList.add('scale-95', 'opacity-0');
-        }
-        
-        setTimeout(() => {
-            modal.classList.add('hidden');
-            modal.classList.remove('flex');
-        }, 200); // Wait for transition
-    }
-
-    // ── Event listeners ────────────────────────────────────────────
+    // ── Init ───────────────────────────────────────────────────────
+    // Auth forms
     document.getElementById('unlock-form').onsubmit = async (e) => {
         e.preventDefault();
-        const btn = document.querySelector('#unlock-form button[type="submit"]');
-        const ogContent = btn.innerHTML;
-        
-        btn.innerHTML = '<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> Unlocking...';
-        btn.disabled = true;
-        renderIcons();
-        
         const pw = document.getElementById('unlock-password').value;
-        const errEl = document.getElementById('unlock-error');
-        
-        try {
-            const res = await api.post('/api/unlock', { password: pw });
-            if (res.ok) {
-                showMain();
-                await loadEntries();
-                showToast('Vault unlocked successfully');
-            } else {
-                errEl.innerHTML = `<i data-lucide="alert-triangle" class="w-4 h-4 inline mr-1"></i> ${esc(res.error || 'Failed to unlock')}`;
-                errEl.classList.remove('hidden');
-                renderIcons();
-            }
-        } finally {
-            btn.innerHTML = ogContent;
-            btn.disabled = false;
-            renderIcons();
-        }
+        const err = document.getElementById('unlock-error');
+        const res = await api.post('/api/unlock', { password: pw });
+        if (res.ok) { showMain(); await loadEntries(); }
+        else { err.textContent = res.error || 'Failed to unlock'; err.classList.remove('hidden'); }
     };
 
-    document.getElementById('btn-lock').onclick = async () => {
-        await api.post('/api/lock');
-        showLock();
-        showToast('Vault locked', 'info');
+    document.getElementById('create-form').onsubmit = async (e) => {
+        e.preventDefault();
+        const pw = document.getElementById('create-password').value;
+        const confirm = document.getElementById('create-confirm').value;
+        const err = document.getElementById('create-error');
+        err.classList.add('hidden');
+        if (pw.length < 8) { err.textContent = 'Password must be at least 8 characters'; err.classList.remove('hidden'); return; }
+        if (pw !== confirm) { err.textContent = 'Passwords do not match'; err.classList.remove('hidden'); return; }
+        const res = await api.post('/api/vault', { password: pw });
+        if (res.ok) { showMain(); await loadEntries(); }
+        else { err.textContent = res.error || 'Failed to create vault'; err.classList.remove('hidden'); }
     };
 
-    document.getElementById('search-input').oninput = (e) => {
-        renderList(e.target.value);
+    document.getElementById('show-create').onclick = () => {
+        document.getElementById('unlock-form').classList.add('hidden');
+        document.getElementById('create-form').classList.remove('hidden');
+        document.getElementById('create-password').focus();
+    };
+    document.getElementById('show-unlock').onclick = () => {
+        document.getElementById('create-form').classList.add('hidden');
+        document.getElementById('unlock-form').classList.remove('hidden');
+        document.getElementById('unlock-password').focus();
     };
 
-    document.getElementById('btn-generate').onclick = () => {
+    // Header buttons
+    document.getElementById('btn-lock').onclick = async () => { await api.post('/api/lock'); showAuth(); };
+    document.getElementById('btn-import').onclick = () => showModal('modal-import');
+    document.getElementById('btn-export').onclick = async () => {
+        const res = await api.get('/api/entries');
+        if (!res.ok) return;
+        const blob = new Blob([JSON.stringify(res.data, null, 2)], { type: 'application/json' });
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'coalbox-export.json'; a.click();
+    };
+    document.getElementById('btn-info').onclick = async () => {
+        const res = await api.get('/api/status');
+        if (!res.ok) return;
+        const d = res.data;
+        document.getElementById('info-content').innerHTML = `
+            <div class="flex justify-between"><span class="text-gray-500">Path</span><span class="font-mono text-xs">${esc(d.vault_path)}</span></div>
+            <div class="flex justify-between"><span class="text-gray-500">Entries</span><span>${d.entry_count}</span></div>
+            <div class="flex justify-between"><span class="text-gray-500">Format</span><span>.emberkeys (EMBK v1)</span></div>
+            <div class="flex justify-between"><span class="text-gray-500">Cipher</span><span>AES-256-GCM</span></div>
+            <div class="flex justify-between"><span class="text-gray-500">KDF</span><span>Argon2id (64MB)</span></div>`;
+        showModal('modal-info');
+    };
+
+    // Search
+    document.getElementById('search-input').oninput = (e) => renderList(e.target.value);
+
+    // Filter tabs
+    document.querySelectorAll('.filter-tab').forEach(tab => {
+        tab.onclick = () => {
+            document.querySelectorAll('.filter-tab').forEach(t => { t.className = 'filter-tab flex-1 py-1.5 text-gray-500 hover:text-gray-300'; });
+            tab.className = 'filter-tab flex-1 py-1.5 text-amber-400 border-b-2 border-amber-400';
+            activeFilter = tab.dataset.filter;
+            activeTag = null;
+            renderList(document.getElementById('search-input').value);
+            renderTags();
+        };
+    });
+
+    // Add entry
+    document.getElementById('btn-add').onclick = () => {
+        document.getElementById('modal-entry-title').textContent = 'New Entry';
+        document.getElementById('entry-id').value = '';
+        document.getElementById('entry-form').reset();
+        document.getElementById('entry-type').value = 'login';
+        updateEntryTypeFields();
+        showModal('modal-entry');
+        document.getElementById('entry-title').focus();
+    };
+    document.getElementById('entry-type').onchange = updateEntryTypeFields;
+    document.getElementById('entry-cancel').onclick = () => hideModal('modal-entry');
+    document.getElementById('entry-modal-close').onclick = () => hideModal('modal-entry');
+
+    // Entry form submit
+    document.getElementById('entry-form').onsubmit = async (e) => {
+        e.preventDefault();
+        const id = document.getElementById('entry-id').value;
+        const body = {
+            title: document.getElementById('entry-title').value,
+            username: document.getElementById('entry-username').value,
+            password: document.getElementById('entry-password').value,
+            url: document.getElementById('entry-url').value,
+            notes: document.getElementById('entry-notes').value,
+            totp_secret: document.getElementById('entry-totp').value,
+            entry_type: document.getElementById('entry-type').value,
+        };
+        if (id) await api.put(`/api/entries/${id}`, body);
+        else await api.post('/api/entries', body);
+        hideModal('modal-entry');
+        await loadEntries();
+        if (id) selectEntry(id);
+    };
+
+    // Generate password button in entry form → opens generator targeting password field
+    document.getElementById('entry-gen-pw').onclick = () => { genTargetField = 'entry-password'; openGenerator(); };
+    document.getElementById('entry-copy-pw').onclick = () => { copyText(document.getElementById('entry-password').value); };
+
+    // Generator
+    function openGenerator() {
         genType = 'password';
         updateGenType();
         generatePassword();
+        const useBtn = document.getElementById('gen-use');
+        if (genTargetField) { useBtn.classList.remove('hidden'); useBtn.textContent = 'Use'; }
+        else { useBtn.classList.add('hidden'); }
         showModal('modal-generate');
-    };
+    }
+    document.getElementById('btn-generate')?.onclick = openGenerator;
 
     document.getElementById('gen-type-password').onclick = () => { genType = 'password'; updateGenType(); generatePassword(); };
     document.getElementById('gen-type-passphrase').onclick = () => { genType = 'passphrase'; updateGenType(); generatePassword(); };
     document.getElementById('gen-refresh').onclick = generatePassword;
-    document.getElementById('gen-close').onclick = () => hideModal('modal-generate');
-    document.getElementById('gen-copy').onclick = async () => {
-        const text = document.getElementById('gen-result').textContent;
-        if (text !== '—') await copyText(text, 'Generated password');
-        hideModal('modal-generate');
+    document.getElementById('gen-close').onclick = () => { genTargetField = null; hideModal('modal-generate'); };
+    document.getElementById('gen-copy').onclick = () => { const t = document.getElementById('gen-result').textContent; if (t !== '—') copyText(t); };
+    document.getElementById('gen-use').onclick = () => {
+        const val = document.getElementById('gen-result').textContent;
+        if (genTargetField && val !== '—') {
+            document.getElementById(genTargetField).value = val;
+            genTargetField = null;
+            hideModal('modal-generate');
+        }
     };
 
     function updateGenType() {
-        const btnPass = document.getElementById('gen-type-password');
-        const btnPhrase = document.getElementById('gen-type-passphrase');
-        
-        if (genType === 'password') {
-            btnPass.className = "flex-1 py-2 bg-gray-800 rounded-md text-sm font-medium text-gray-100 shadow-sm transition-all";
-            btnPhrase.className = "flex-1 py-2 hover:bg-gray-800/50 rounded-md text-sm font-medium text-gray-400 transition-all";
-        } else {
-            btnPhrase.className = "flex-1 py-2 bg-gray-800 rounded-md text-sm font-medium text-gray-100 shadow-sm transition-all";
-            btnPass.className = "flex-1 py-2 hover:bg-gray-800/50 rounded-md text-sm font-medium text-gray-400 transition-all";
-        }
-        
+        document.getElementById('gen-type-password').className = `flex-1 py-1.5 rounded text-sm ${genType === 'password' ? 'bg-amber-600' : 'bg-gray-800'}`;
+        document.getElementById('gen-type-passphrase').className = `flex-1 py-1.5 rounded text-sm ${genType === 'passphrase' ? 'bg-amber-600' : 'bg-gray-800'}`;
         document.getElementById('gen-password-opts').classList.toggle('hidden', genType !== 'password');
         document.getElementById('gen-passphrase-opts').classList.toggle('hidden', genType !== 'passphrase');
     }
@@ -780,166 +617,73 @@
         const body = genType === 'passphrase'
             ? { passphrase: true, words: +document.getElementById('gen-words').value, separator: document.getElementById('gen-separator').value, capitalize: document.getElementById('gen-capitalize').checked, number: document.getElementById('gen-number').checked }
             : { passphrase: false, length: +document.getElementById('gen-length').value };
-            
         const res = await api.post('/api/generate', body);
-        if (res.ok) {
-            const container = document.getElementById('gen-result');
-            container.textContent = res.data.password;
-            
-            // Small pop animation
-            container.parentElement.classList.remove('scale-105', 'shadow-amber-500/20');
-            void container.parentElement.offsetWidth; // trigger reflow
-            container.parentElement.classList.add('scale-105', 'shadow-amber-500/20');
-            setTimeout(() => container.parentElement.classList.remove('scale-105', 'shadow-amber-500/20'), 200);
-        }
+        if (res.ok) document.getElementById('gen-result').textContent = res.data.password;
     }
-    // Initialize toggle classes for modal inner divs for transitions
-    document.querySelectorAll('[id^="modal-"] > div').forEach(div => {
-        div.classList.add('scale-95', 'opacity-0');
+
+    // Import
+    document.getElementById('import-submit').onclick = async () => {
+        const fileInput = document.getElementById('import-file');
+        const format = document.getElementById('import-format').value;
+        const resultEl = document.getElementById('import-result');
+        if (!fileInput.files.length) { resultEl.textContent = 'Select a file first'; resultEl.classList.remove('hidden'); return; }
+
+        const formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+        formData.append('format', format);
+
+        // For now, we use JSON upload since we don't have multipart
+        // Read file as text and send as JSON
+        const text = await fileInput.files[0].text();
+        const res = await fetch('/api/import', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ content: text, format: format, filename: fileInput.files[0].name })
+        });
+        const data = await res.json();
+        if (data.ok) {
+            resultEl.innerHTML = `<span class="text-green-400">✓ Imported ${data.data?.imported || 0} entries</span>`;
+            resultEl.classList.remove('hidden');
+            await loadEntries();
+        } else {
+            resultEl.innerHTML = `<span class="text-red-400">✗ ${data.error}</span>`;
+            resultEl.classList.remove('hidden');
+        }
+    };
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+        // Ctrl+K → focus search
+        if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+            e.preventDefault();
+            document.getElementById('search-input').focus();
+        }
+        // Ctrl+N → new entry
+        if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+            e.preventDefault();
+            document.getElementById('btn-add').click();
+        }
+        // Escape → close modals
+        if (e.key === 'Escape') {
+            ['modal-generate', 'modal-entry', 'modal-info', 'modal-import'].forEach(id => {
+                const m = document.getElementById(id);
+                if (!m.classList.contains('hidden')) { hideModal(id); genTargetField = null; }
+            });
+        }
     });
 
-    document.getElementById('tab-vault').onclick = () => {
-        activeTab = 'vault';
-        document.getElementById('tab-vault').className = "flex-1 py-1.5 px-3 rounded-lg text-sm font-medium bg-gray-800 text-gray-200 transition-all";
-        document.getElementById('tab-authenticator').className = "flex-1 py-1.5 px-3 rounded-lg text-sm font-medium text-gray-500 hover:text-gray-300 hover:bg-gray-800/50 transition-all";
-        renderList(document.getElementById('search-input').value);
-    };
-
-    document.getElementById('tab-authenticator').onclick = () => {
-        activeTab = 'authenticator';
-        document.getElementById('tab-authenticator').className = "flex-1 py-1.5 px-3 rounded-lg text-sm font-medium bg-gray-800 text-gray-200 transition-all";
-        document.getElementById('tab-vault').className = "flex-1 py-1.5 px-3 rounded-lg text-sm font-medium text-gray-500 hover:text-gray-300 hover:bg-gray-800/50 transition-all";
-        renderList(document.getElementById('search-input').value);
-    };
-
-    // ── Entry CRUD modals ──────────────────────────────────────────
-    document.getElementById('btn-add').onclick = () => {
-        document.getElementById('modal-entry-title').innerHTML = '<i data-lucide="file-plus" class="w-5 h-5 text-amber-500"></i> <span>New Entry</span>';
-        document.getElementById('entry-id').value = '';
-        document.getElementById('entry-form').reset();
-        document.getElementById('entry-type').value = activeTab === 'authenticator' ? 'authenticator' : 'login';
-        document.getElementById('entry-totp').value = '';
-        updateEntryTypeFields();
-        renderIcons();
-        showModal('modal-entry');
-    };
-
-    document.getElementById('entry-type').onchange = updateEntryTypeFields;
-    document.getElementById('entry-cancel').onclick = () => hideModal('modal-entry');
-    document.getElementById('entry-modal-close').onclick = () => hideModal('modal-entry');
-
-    function updateEntryTypeFields() {
-        const type = document.getElementById('entry-type').value;
-        const loginFields = document.getElementById('login-fields');
-        
-        if (type === 'note' || type === 'authenticator') {
-            loginFields.style.display = 'none';
-        } else {
-            loginFields.style.display = 'block';
-        }
-    }
-
-    document.getElementById('entry-form').onsubmit = async (e) => {
-        e.preventDefault();
-        
-        // Show loading state
-        const btn = document.querySelector('#entry-form button[type="submit"]');
-        const ogContent = btn.innerHTML;
-        btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Saving...';
-        btn.disabled = true;
-        renderIcons();
-        
-        try {
-            const id = document.getElementById('entry-id').value;
-            const body = {
-                title: document.getElementById('entry-title').value,
-                username: document.getElementById('entry-username').value,
-                password: document.getElementById('entry-password').value,
-                url: document.getElementById('entry-url').value,
-                notes: document.getElementById('entry-notes').value,
-                totp_secret: document.getElementById('entry-totp').value,
-                entry_type: document.getElementById('entry-type').value,
-            };
-
-            if (id) {
-                await api.put(`/api/entries/${id}`, body);
-                showToast('Entry updated successfully');
-            } else {
-                const res = await api.post('/api/entries', body);
-                showToast('New entry created');
-                if (res.ok && res.data) {
-                    idToSelect = res.data.id;
-                }
-            }
-            
-            hideModal('modal-entry');
-            await loadEntries();
-            
-            if (id) {
-                selectEntry(id);
-            } else if (typeof idToSelect !== 'undefined') {
-                selectEntry(idToSelect);
-            }
-        } catch (err) {
-            showToast('Failed to save entry', 'error');
-            console.error(err);
-        } finally {
-            btn.innerHTML = ogContent;
-            btn.disabled = false;
-            renderIcons();
-        }
-    };
-
-    window.editEntry = async (id) => {
-        const res = await api.get(`/api/entries/${id}`);
-        if (!res.ok) return;
-        const e = res.data;
-        
-        document.getElementById('modal-entry-title').innerHTML = '<i data-lucide="edit" class="w-5 h-5 text-amber-500"></i> <span>Edit Entry</span>';
-        document.getElementById('entry-id').value = e.id;
-        document.getElementById('entry-type').value = e.entry_type;
-        document.getElementById('entry-title').value = e.title;
-        document.getElementById('entry-username').value = e.username || '';
-        document.getElementById('entry-password').value = e.password || '';
-        document.getElementById('entry-url').value = e.url || '';
-        document.getElementById('entry-notes').value = e.notes || '';
-        document.getElementById('entry-totp').value = e.totp_secret || '';
-        
-        updateEntryTypeFields();
-        renderIcons();
-        showModal('modal-entry');
-    };
-
-    window.deleteEntry = async (id) => {
-        if (!confirm('Are you sure you want to delete this entry? This cannot be undone.')) return;
-        
-        stopTotpAutoRefresh();
-        const res = await api.del(`/api/entries/${id}`);
-        
+    // Check vault status on load
+    (async () => {
+        const res = await api.get('/api/status');
         if (res.ok) {
-            selectedId = null;
-            document.getElementById('content-area').innerHTML = `
-                <div class="h-full flex flex-col items-center justify-center text-gray-500 space-y-4 select-none">
-                    <div class="w-20 h-20 bg-gray-900/50 rounded-3xl flex items-center justify-center border border-gray-800 shadow-inner">
-                        <i data-lucide="box" class="w-10 h-10 text-gray-700"></i>
-                    </div>
-                    <p class="font-medium text-gray-500 text-sm">Select an entry or create a new one</p>
-                </div>
-            `;
-            renderIcons();
-            showToast('Entry deleted successfully');
-            await loadEntries();
-        } else {
-            showToast('Failed to delete entry', 'error');
+            if (!res.data.vault_exists) {
+                document.getElementById('unlock-form').classList.add('hidden');
+                document.getElementById('create-form').classList.remove('hidden');
+                document.getElementById('create-password').focus();
+            }
         }
-    };
-
-    window.copyText = copyText;
-    window.refreshTotp = refreshTotp;
-    window.copyTotpCode = copyTotpCode;
-
-    // ── Init ───────────────────────────────────────────────────────
-    connectWs();
+        connectWs();
+    })();
     </script>
 </body>
 </html>
