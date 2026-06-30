@@ -134,20 +134,24 @@ main() {
     cargo build --release 2>&1 | tail -3
 
     step "Installing coalbox"
-    local binary="target/release/coalbox"
+    local cli_binary="target/release/coalbox"
+    local web_binary="target/release/coalbox-web"
 
-    if [ ! -f "$binary" ]; then
-        error "Build failed — binary not found at $binary"
+    if [ ! -f "$cli_binary" ]; then
+        error "Build failed — binary not found at $cli_binary"
         exit 1
     fi
 
     if [ -w "$INSTALL_DIR" ]; then
-        cp "$binary" "${INSTALL_DIR}/coalbox"
+        cp "$cli_binary" "${INSTALL_DIR}/coalbox"
+        [ -f "$web_binary" ] && cp "$web_binary" "${INSTALL_DIR}/coalbox-web"
     else
-        sudo cp "$binary" "${INSTALL_DIR}/coalbox"
+        sudo cp "$cli_binary" "${INSTALL_DIR}/coalbox"
+        [ -f "$web_binary" ] && sudo cp "$web_binary" "${INSTALL_DIR}/coalbox-web"
     fi
 
     chmod +x "${INSTALL_DIR}/coalbox"
+    [ -f "${INSTALL_DIR}/coalbox-web" ] && chmod +x "${INSTALL_DIR}/coalbox-web"
 
     # Verify
     if command -v coalbox &>/dev/null; then
@@ -158,6 +162,10 @@ main() {
         info "Installed coalbox to ${INSTALL_DIR}/coalbox"
         warn "If 'coalbox' is not found, add ${INSTALL_DIR} to your PATH:"
         warn "  export PATH=\"${INSTALL_DIR}:\$PATH\""
+    fi
+
+    if command -v coalbox-web &>/dev/null; then
+        info "Installed coalbox-web to ${INSTALL_DIR}/coalbox-web"
     fi
 
     echo ""
