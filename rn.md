@@ -1,38 +1,30 @@
-# v0.6.5 — UI Overhaul
+# v0.6.5 — Uninstall + Vault Destroy
 
 ## What's new
 
-- **UI Overhaul** — Premium dark charcoal theme, glassmorphism removal
-- **Lucide Icons** — Migrated to vector icons for clarity
-- **Authenticator Tab** — Dedicated tab and logic for TOTP entries
-- **Password Generator Fixes** — Direct inline generation on vault creation, dedicated header button
-- **Smooth TOTP countdown** — Precision animation without jitter
-
-# v0.6.4 — Update System
-
-## What's new
-
-- **`coalbox update`** — check for updates and build from source
-- **Update checker** — checks GitHub releases API on CLI and WebUI
-- **WebUI update button** — shows when update is available, one-click update
-- **CLI update prompt** — `coalbox update` shows release notes and prompts before updating
-- **`coalbox update --yes`** — skip confirmation prompt
+- **`uninstall.sh`** — removes coalbox binaries, preserves vault data
+- **`coalbox destroy`** — permanently delete a vault file
+- **WebUI vault delete** — delete vault from the Vault Info modal
+- **Confirmation prompts** — both CLI and WebUI require confirmation before destroying vaults
 
 ## CLI Usage
 
 ```bash
-# Check for updates
-coalbox update
+# Uninstall coalbox (keeps vault)
+bash uninstall.sh
 
-# Update without confirmation
-coalbox update --yes
+# Delete a vault (requires typing vault name to confirm)
+coalbox destroy
+
+# Delete without confirmation (dangerous!)
+coalbox destroy --yes
 ```
 
 ## WebUI
 
-- Green arrow icon appears in header when update is available
-- Click to see release notes and confirm update
-- Update builds from source and installs to same location
+- "Delete Vault" button in Vault Info modal
+- Requires typing vault name to confirm
+- Vault is permanently deleted, all entries lost
 
 ## Build from source
 

@@ -799,6 +799,36 @@ async fn run_update(
     }
 }
 
+async fn destroy_vault(
+    State(state): State<AppState>,
+) -> Result<Json<ApiResponse<serde_json::Value>>, (StatusCode, Json<ApiResponse<()>>)> {
+    let v = state.vault.read().await;
+    match v.as_ref() {
+        Some(vs) => {
+            let path = std::path::Path::new(&vs.vault_path).to_path_buf();
+            let vault_path = vs.vault_path.clone();
+            drop(v);
+            if path.exists() {
+                match std::fs::remove_file(&path) {
+                    Ok(()) => {
+                        let mut vault = state.vault.write().await;
+                        *vault = None;
+                        let _ = state.tx.send("lock".to_string());
+                        Ok(ApiResponse::ok(serde_json::json!({
+                            "ok": true,
+                            "deleted": vault_path
+                        })))
+                    }
+                    Err(e) => Err((StatusCode::INTERNAL_SERVER_ERROR, ApiResponse::err(&format!("Failed to delete vault: {}", e)))),
+                }
+            } else {
+                Err((StatusCode::NOT_FOUND, ApiResponse::err("Vault file not found")))
+            }
+        }
+        None => Err((StatusCode::UNAUTHORIZED, ApiResponse::err("Vault is locked"))),
+    }
+}
+
 async fn serve_index() -> Html<&'static str> {
     Html(INDEX_HTML)
 }
@@ -845,6 +875,7 @@ async fn main() {
         .route("/api/migrate", post(migrate_entries))
         .route("/api/update/check", get(check_update))
         .route("/api/update", post(run_update))
+        .route("/api/vault/destroy", post(destroy_vault))
         .route("/ws", get(ws_handler))
         .layer(cors)
         .layer(TraceLayer::new_for_http())

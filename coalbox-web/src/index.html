@@ -225,6 +225,9 @@
             <div class="glass-card rounded-xl w-full max-w-sm p-6 relative">
                 <h2 class="text-lg font-bold mb-4">Vault Info</h2>
                 <div id="info-content" class="space-y-2 text-sm"></div>
+                <div class="mt-4 pt-4 border-t border-gray-800">
+                    <button id="btn-destroy-vault" class="w-full py-2 bg-red-900/50 hover:bg-red-800/50 text-red-400 rounded text-sm font-medium">Delete Vault</button>
+                </div>
                 <button onclick="hideModal('modal-info')" class="absolute top-3 right-3 text-slate-400 hover:text-gray-300 text-xl">&times;</button>
             </div>
         </div>
@@ -598,6 +601,20 @@
             <div class="flex justify-between"><span class="text-slate-400">Cipher</span><span>AES-256-GCM</span></div>
             <div class="flex justify-between"><span class="text-slate-400">KDF</span><span>Argon2id (64MB)</span></div>`;
         showModal('modal-info');
+    };
+
+    // Destroy vault
+    document.getElementById('btn-destroy-vault').onclick = async () => {
+        if (!confirm('This will permanently delete your vault and ALL entries.\n\nAre you absolutely sure?')) return;
+        const name = prompt('Type the vault name to confirm deletion:');
+        if (!name) return;
+        const res = await api.post('/api/vault/destroy', {});
+        if (res.ok) {
+            alert('Vault deleted.');
+            showAuth();
+        } else {
+            alert('Failed: ' + (res.error || 'Unknown error'));
+        }
     };
 
     // Update check

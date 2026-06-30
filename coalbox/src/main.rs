@@ -181,6 +181,17 @@ enum Commands {
         #[arg(long)]
         yes: bool,
     },
+
+    /// Permanently delete a vault file
+    Destroy {
+        /// Vault file path
+        #[arg(short, long)]
+        vault: Option<String>,
+
+        /// Skip confirmation prompt
+        #[arg(long)]
+        yes: bool,
+    },
 }
 
 // ── JSON output helpers ──────────────────────────────────────────────
@@ -903,6 +914,62 @@ fn run_update(cli: &Cli) {
     }
 }
 
+fn destroy_vault(cli: &Cli, vault_path_opt: &Option<String>, skip_confirm: bool) {
+    let path = resolve_vault_path(vault_path_opt);
+
+    if !path.exists() {
+        exit_error(cli, &format!("Vault not found at {}", path.display()));
+    }
+
+    if !skip_confirm {
+        if cli.json {
+            json_output(&serde_json::json!({
+                "ok": false,
+                "error": "Confirmation required. Use --yes to skip."
+            }));
+        } else {
+            eprintln!(
+                "{} This will permanently delete your vault and all entries.",
+                "WARNING:".red().bold()
+            );
+            eprintln!("  Path: {}", path.display().to_string().bold());
+            eprintln!();
+            print!("Type the vault name to confirm deletion: ");
+            use std::io::Write;
+            std::io::stdout().flush().ok();
+            let mut input = String::new();
+            std::io::stdin().read_line(&mut input).ok();
+
+            let vault_name = path
+                .file_stem()
+                .and_then(|s| s.to_str())
+                .unwrap_or("");
+
+            if input.trim() != vault_name {
+                exit_error(cli, "Deletion cancelled — name didn't match");
+            }
+        }
+    }
+
+    match std::fs::remove_file(&path) {
+        Ok(()) => {
+            if cli.json {
+                json_output(&serde_json::json!({
+                    "ok": true,
+                    "deleted": path.display().to_string()
+                }));
+            } else if !cli.quiet {
+                println!(
+                    "{} Deleted vault at {}",
+                    "✓".green().bold(),
+                    path.display()
+                );
+            }
+        }
+        Err(e) => exit_error(cli, &format!("Failed to delete vault: {}", e)),
+    }
+}
+
 // ── Pretty printers ──────────────────────────────────────────────────
 
 fn print_entry_summary(entry: &Entry) {
@@ -1134,6 +1201,10 @@ fn main() {
         Commands::Update { yes } => {
             let c = Cli { json, quiet, command: Commands::Update { yes } };
             check_and_update(&c, yes);
+        }
+        Commands::Destroy { vault, yes } => {
+            let c = Cli { json, quiet, command: Commands::Destroy { vault: vault.clone(), yes } };
+            destroy_vault(&c, &vault, yes);
         }
     }
 }
