@@ -747,6 +747,58 @@ async fn handle_ws(mut socket: WebSocket, state: AppState) {
 
 const INDEX_HTML: &str = include_str!("index.html");
 
+async fn check_update(
+) -> Result<Json<ApiResponse<serde_json::Value>>, (StatusCode, Json<ApiResponse<()>>)> {
+    match coalbox_core::check_for_update() {
+        Ok(check) => {
+            let mut result = serde_json::json!({
+                "current_version": check.current_version,
+                "latest_version": check.latest_version,
+                "update_available": check.update_available,
+            });
+
+            if let Some(ref release) = check.release {
+                result["release_name"] = serde_json::Value::String(release.name.clone());
+                result["release_notes"] = serde_json::Value::String(release.body.clone());
+            }
+
+            Ok(ApiResponse::ok(result))
+        }
+        Err(e) => Err((StatusCode::INTERNAL_SERVER_ERROR, ApiResponse::err(&format!("Failed to check for updates: {}", e)))),
+    }
+}
+
+async fn run_update(
+) -> Result<Json<ApiResponse<serde_json::Value>>, (StatusCode, Json<ApiResponse<()>>)> {
+    let update_script = include_str!("../../update.sh");
+
+    let tmp_script = std::env::temp_dir().join("coalbox_update.sh");
+    if let Err(e) = std::fs::write(&tmp_script, update_script) {
+        return Err((StatusCode::INTERNAL_SERVER_ERROR, ApiResponse::err(&format!("Failed to write update script: {}", e))));
+    }
+
+    let result = std::process::Command::new("bash")
+        .arg(&tmp_script)
+        .output();
+
+    let _ = std::fs::remove_file(&tmp_script);
+
+    match result {
+        Ok(output) => {
+            if output.status.success() {
+                Ok(ApiResponse::ok(serde_json::json!({
+                    "ok": true,
+                    "message": "Update completed successfully"
+                })))
+            } else {
+                let stderr = String::from_utf8_lossy(&output.stderr);
+                Err((StatusCode::INTERNAL_SERVER_ERROR, ApiResponse::err(&format!("Update failed: {}", stderr))))
+            }
+        }
+        Err(e) => Err((StatusCode::INTERNAL_SERVER_ERROR, ApiResponse::err(&format!("Failed to run update: {}", e)))),
+    }
+}
+
 async fn serve_index() -> Html<&'static str> {
     Html(INDEX_HTML)
 }
@@ -791,6 +843,8 @@ async fn main() {
         .route("/api/generate", post(generate_password_endpoint))
         .route("/api/import", post(import_entries))
         .route("/api/migrate", post(migrate_entries))
+        .route("/api/update/check", get(check_update))
+        .route("/api/update", post(run_update))
         .route("/ws", get(ws_handler))
         .layer(cors)
         .layer(TraceLayer::new_for_http())

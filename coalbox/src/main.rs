@@ -5,8 +5,9 @@ use std::path::PathBuf;
 use std::process;
 
 use coalbox_core::{
-    audit_passwords, check_password, generate_passphrase, generate_password,
-    import_file, Entry, ImportFormat, PassphraseConfig, PasswordConfig, TotpConfig, Vault,
+    audit_passwords, check_for_update, check_password, generate_passphrase,
+    generate_password, import_file, Entry, ImportFormat, PassphraseConfig, PasswordConfig,
+    TotpConfig, Vault,
 };
 
 const EXIT_ERROR: i32 = 1;
@@ -172,6 +173,13 @@ enum Commands {
         /// Vault file path
         #[arg(short, long)]
         vault: Option<String>,
+    },
+
+    /// Check for updates and optionally update
+    Update {
+        /// Skip confirmation prompt
+        #[arg(long)]
+        yes: bool,
     },
 }
 
@@ -792,6 +800,109 @@ fn migrate_vault(cli: &Cli, target: &str, output: &str, vault_path_opt: &Option<
     }
 }
 
+fn check_and_update(cli: &Cli, skip_confirm: bool) {
+    if !cli.quiet && !cli.json {
+        println!("{}", "Checking for updates...".dimmed());
+    }
+
+    let check = match check_for_update() {
+        Ok(c) => c,
+        Err(e) => exit_error(cli, &format!("Failed to check for updates: {}", e)),
+    };
+
+    if !check.update_available {
+        if cli.json {
+            json_output(&serde_json::json!({
+                "ok": true,
+                "update_available": false,
+                "current_version": check.current_version,
+                "latest_version": check.latest_version,
+            }));
+        } else if !cli.quiet {
+            println!(
+                "{} You're running the latest version (v{})",
+                "✓".green().bold(),
+                check.current_version
+            );
+        }
+        return;
+    }
+
+    if cli.json {
+        json_output(&serde_json::json!({
+            "ok": true,
+            "update_available": true,
+            "current_version": check.current_version,
+            "latest_version": check.latest_version,
+        }));
+    } else if !cli.quiet {
+        println!(
+            "{} New update available: {} -> {}",
+            "↑".cyan().bold(),
+            check.current_version,
+            check.latest_version.green().bold()
+        );
+        if let Some(ref release) = check.release
+            && !release.body.is_empty()
+        {
+            println!();
+            println!("{}", release.body);
+        }
+        println!();
+    }
+
+    if !skip_confirm && !cli.quiet {
+        print!("Update now? [y/N] ");
+        use std::io::Write;
+        std::io::stdout().flush().ok();
+        let mut input = String::new();
+        std::io::stdin().read_line(&mut input).ok();
+        if !input.trim().eq_ignore_ascii_case("y") && !input.trim().eq_ignore_ascii_case("yes") {
+            if !cli.quiet {
+                println!("Update cancelled.");
+            }
+            return;
+        }
+    }
+
+    run_update(cli);
+}
+
+fn run_update(cli: &Cli) {
+    if !cli.quiet {
+        println!("{}", "Building and installing update...".dimmed());
+    }
+
+    let update_script = include_str!("../../update.sh");
+
+    let tmp_script = std::env::temp_dir().join("coalbox_update.sh");
+    std::fs::write(&tmp_script, update_script).expect("Failed to write update script");
+
+    let status = std::process::Command::new("bash")
+        .arg(&tmp_script)
+        .status();
+
+    let _ = std::fs::remove_file(&tmp_script);
+
+    match status {
+        Ok(s) if s.success() => {
+            if cli.json {
+                json_output(&serde_json::json!({
+                    "ok": true,
+                    "message": "Update completed successfully"
+                }));
+            } else if !cli.quiet {
+                println!(
+                    "{} Update completed! Restart coalbox to use the new version.",
+                    "✓".green().bold()
+                );
+            }
+        }
+        Ok(s) => exit_error(cli, &format!("Update script exited with status: {}", s)),
+        Err(e) => exit_error(cli, &format!("Failed to run update script: {}", e)),
+    }
+}
+
 // ── Pretty printers ──────────────────────────────────────────────────
 
 fn print_entry_summary(entry: &Entry) {
@@ -1019,6 +1130,10 @@ fn main() {
         Commands::Migrate { to, output, vault } => {
             let c = Cli { json, quiet, command: Commands::Migrate { to: to.clone(), output: output.clone(), vault: vault.clone() } };
             migrate_vault(&c, &to, &output, &vault);
+        }
+        Commands::Update { yes } => {
+            let c = Cli { json, quiet, command: Commands::Update { yes } };
+            check_and_update(&c, yes);
         }
     }
 }

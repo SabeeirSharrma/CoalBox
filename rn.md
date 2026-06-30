@@ -1,27 +1,28 @@
-# v0.6.3 — Migration System
+# v0.6.4 — Update System
 
 ## What's new
 
-- **`coalbox migrate` command** — export vault to encrypted KDBX or Bitwarden format
-- **No plaintext export** — Coalbox never writes decrypted data to disk
-- **KDBX (KeePass)** — primary target, universal bridge to all major password managers
-- **Bitwarden encrypted export** — secondary target for Bitwarden users
-- **WebUI migrate panel** — migrate from the browser with encrypted download
-- **Removed plaintext JSON export** — security: decrypted data never touches disk
+- **`coalbox update`** — check for updates and build from source
+- **Update checker** — checks GitHub releases API on CLI and WebUI
+- **WebUI update button** — shows when update is available, one-click update
+- **CLI update prompt** — `coalbox update` shows release notes and prompts before updating
+- **`coalbox update --yes`** — skip confirmation prompt
 
-## Usage
+## CLI Usage
 
 ```bash
-# Migrate to KDBX (importable by KeePass, KeePassXC, 1Password, etc.)
-coalbox migrate --to kdbx --output ~/vault.kdbx
+# Check for updates
+coalbox update
 
-# Migrate to Bitwarden encrypted export
-coalbox migrate --to bitwarden --output ~/export.json
+# Update without confirmation
+coalbox update --yes
 ```
 
-Each command prompts for:
-1. Master password (to unlock vault)
-2. Export password (to protect the new file — never the same as master)
+## WebUI
+
+- Green arrow icon appears in header when update is available
+- Click to see release notes and confirm update
+- Update builds from source and installs to same location
 
 ## Build from source
 

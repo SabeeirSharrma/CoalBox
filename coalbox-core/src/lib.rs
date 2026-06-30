@@ -7,6 +7,7 @@ pub mod generator;
 pub mod import_export;
 pub mod migrate;
 pub mod totp;
+pub mod update;
 pub mod vault;
 
 pub use breach::{audit_passwords, check_password, AuditResult, BreachResult};
@@ -15,4 +16,5 @@ pub use error::CoalboxError;
 pub use generator::{generate_passphrase, generate_password, PassphraseConfig, PasswordConfig};
 pub use import_export::{import_file, ImportFormat, ImportResult};
 pub use totp::{TotpAlgorithm, TotpCode, TotpConfig};
+pub use update::{check_for_update, current_version, UpdateCheck};
 pub use vault::Vault;

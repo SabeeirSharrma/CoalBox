@@ -92,6 +92,7 @@
                     <button id="btn-import" class="text-xs px-2 py-1 glass hover:bg-gray-700 rounded" title="Import"><i data-lucide="download" class="w-4 h-4"></i></button>
                     <button id="btn-migrate" class="text-xs px-2 py-1 glass hover:bg-gray-700 rounded" title="Migrate"><i data-lucide="arrow-right-left" class="w-4 h-4"></i></button>
                     <button id="btn-info" class="text-xs px-2 py-1 glass hover:bg-gray-700 rounded" title="Vault info"><i data-lucide="info" class="w-4 h-4"></i></button>
+                    <button id="btn-update" class="text-xs px-2 py-1 glass hover:bg-gray-700 rounded hidden" title="Update available"><i data-lucide="arrow-up-circle" class="w-4 h-4 text-green-400"></i></button>
                     <button id="btn-lock" class="text-xs px-2 py-1 glass hover:bg-gray-700 rounded text-red-400" title="Lock vault"><i data-lucide="lock" class="w-4 h-4"></i></button>
                 </div>
             </header>
@@ -589,6 +590,36 @@
             <div class="flex justify-between"><span class="text-slate-400">KDF</span><span>Argon2id (64MB)</span></div>`;
         showModal('modal-info');
     };
+
+    // Update check
+    document.getElementById('btn-update').onclick = async () => {
+        const res = await api.get('/api/update/check');
+        if (res.ok && res.data.update_available) {
+            if (confirm(`Update available: ${res.data.current_version} -> ${res.data.latest_version}\n\nUpdate now?`)) {
+                const updateRes = await api.post('/api/update', {});
+                if (updateRes.ok) {
+                    alert('Update completed! Reload the page to use the new version.');
+                } else {
+                    alert('Update failed: ' + (updateRes.error || 'Unknown error'));
+                }
+            }
+        } else {
+            alert('You\'re running the latest version!');
+        }
+    };
+
+    // Check for updates on load
+    async function checkForUpdates() {
+        try {
+            const res = await api.get('/api/update/check');
+            if (res.ok && res.data.update_available) {
+                const btn = document.getElementById('btn-update');
+                btn.classList.remove('hidden');
+                btn.title = `Update available: ${res.data.current_version} -> ${res.data.latest_version}`;
+            }
+        } catch (e) {}
+    }
+    checkForUpdates();
 
     // Search
     document.getElementById('search-input').oninput = (e) => renderList(e.target.value);
