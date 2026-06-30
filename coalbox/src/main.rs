@@ -15,7 +15,7 @@ const EXIT_ERROR: i32 = 1;
 #[derive(Parser)]
 #[command(
     name = "coalbox",
-    version = "0.6.3",
+    version = "0.6.5",
     about = "Coalbox password manager",
     after_help = "Run 'coalbox <command> --help' for more information on a specific command."
 )]

@@ -24,7 +24,7 @@ use tower_http::trace::TraceLayer;
 // ── CLI ──────────────────────────────────────────────────────────────
 
 #[derive(Parser)]
-#[command(name = "coalbox-web", version = "0.6.3", about = "Coalbox WebUI")]
+#[command(name = "coalbox-web", version = "0.6.5", about = "Coalbox WebUI")]
 struct Cli {
     /// Path to the vault file
     #[arg(short, long, default_value = "~/.local/share/coalbox/vault.emberkeys")]
@@ -858,7 +858,7 @@ async fn main() {
     let local_addr = listener.local_addr().expect("Failed to get local addr");
 
     println!("╔══════════════════════════════════════════════╗");
-    println!("║           Coalbox WebUI v0.6.0              ║");
+    println!("║           Coalbox WebUI v0.6.5              ║");
     println!("╠══════════════════════════════════════════════╣");
     println!("║  URL:   http://{}", local_addr);
     println!("║  Vault: {}", vault_path);

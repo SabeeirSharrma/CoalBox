@@ -1,3 +1,13 @@
+# v0.6.5 — UI Overhaul
+
+## What's new
+
+- **UI Overhaul** — Premium dark charcoal theme, glassmorphism removal
+- **Lucide Icons** — Migrated to vector icons for clarity
+- **Authenticator Tab** — Dedicated tab and logic for TOTP entries
+- **Password Generator Fixes** — Direct inline generation on vault creation, dedicated header button
+- **Smooth TOTP countdown** — Precision animation without jitter
+
 # v0.6.4 — Update System
 
 ## What's new
