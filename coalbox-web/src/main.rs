@@ -24,7 +24,7 @@ use tower_http::trace::TraceLayer;
 // ── CLI ──────────────────────────────────────────────────────────────
 
 #[derive(Parser)]
-#[command(name = "coalbox-web", version = "0.6.0", about = "Coalbox WebUI")]
+#[command(name = "coalbox-web", version = "0.6.3", about = "Coalbox WebUI")]
 struct Cli {
     /// Path to the vault file
     #[arg(short, long, default_value = "~/.local/share/coalbox/vault.emberkeys")]
@@ -170,6 +170,12 @@ struct ImportRequest {
     content: String,
     format: String,
     filename: String,
+}
+
+#[derive(Deserialize)]
+struct MigrateRequest {
+    target: String,
+    password: String,
 }
 
 // ── Handlers ─────────────────────────────────────────────────────────
@@ -591,6 +597,77 @@ async fn import_entries(
     }
 }
 
+async fn migrate_entries(
+    State(state): State<AppState>,
+    Json(req): Json<MigrateRequest>,
+) -> Result<Json<ApiResponse<serde_json::Value>>, (StatusCode, Json<ApiResponse<()>>)> {
+    let v = state.vault.read().await;
+    match v.as_ref() {
+        Some(vs) => {
+            let entries = match vs.vault.list_entries() {
+                Ok(e) => e,
+                Err(e) => return Err((StatusCode::INTERNAL_SERVER_ERROR, ApiResponse::err(&format!("Failed to list entries: {}", e)))),
+            };
+
+            let ext = match req.target.as_str() {
+                "kdbx" => "kdbx",
+                "bitwarden" => "json",
+                _ => return Err((StatusCode::BAD_REQUEST, ApiResponse::err("Unsupported target format"))),
+            };
+
+            let filename = format!("coalbox_migration.{}", ext);
+            let tmp = std::env::temp_dir().join(&filename);
+
+            match coalbox_core::migrate::migrate_entries(&entries, &req.target, &tmp, &req.password) {
+                Ok(()) => {
+                    // Read the file and return as base64 for download
+                    match std::fs::read(&tmp) {
+                        Ok(data) => {
+                            let _ = std::fs::remove_file(&tmp);
+                            let b64 = base64_encode(&data);
+                            Ok(ApiResponse::ok(serde_json::json!({
+                                "filename": filename,
+                                "data": b64,
+                                "size": data.len(),
+                            })))
+                        }
+                        Err(e) => Err((StatusCode::INTERNAL_SERVER_ERROR, ApiResponse::err(&format!("Failed to read output file: {}", e)))),
+                    }
+                }
+                Err(e) => Err((StatusCode::INTERNAL_SERVER_ERROR, ApiResponse::err(&format!("Migration failed: {}", e)))),
+            }
+        }
+        None => Err((StatusCode::UNAUTHORIZED, ApiResponse::err("Vault is locked"))),
+    }
+}
+
+fn base64_encode(data: &[u8]) -> String {
+    let chars: Vec<char> = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+        .chars()
+        .collect();
+    let mut output = String::new();
+    for chunk in data.chunks(3) {
+        let b0 = chunk[0] as u32;
+        let b1 = if chunk.len() > 1 { chunk[1] as u32 } else { 0 };
+        let b2 = if chunk.len() > 2 { chunk[2] as u32 } else { 0 };
+        let triple = (b0 << 16) | (b1 << 8) | b2;
+
+        output.push(chars[((triple >> 18) & 0x3F) as usize]);
+        output.push(chars[((triple >> 12) & 0x3F) as usize]);
+        if chunk.len() > 1 {
+            output.push(chars[((triple >> 6) & 0x3F) as usize]);
+        } else {
+            output.push('=');
+        }
+        if chunk.len() > 2 {
+            output.push(chars[(triple & 0x3F) as usize]);
+        } else {
+            output.push('=');
+        }
+    }
+    output
+}
+
 async fn get_totp(
     State(state): State<AppState>,
     Path(id): Path<String>,
@@ -713,6 +790,7 @@ async fn main() {
         .route("/api/search", get(search_entries))
         .route("/api/generate", post(generate_password_endpoint))
         .route("/api/import", post(import_entries))
+        .route("/api/migrate", post(migrate_entries))
         .route("/ws", get(ws_handler))
         .layer(cors)
         .layer(TraceLayer::new_for_http())

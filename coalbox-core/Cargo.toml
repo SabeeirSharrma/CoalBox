@@ -1,11 +1,13 @@
 [package]
 name = "coalbox-core"
-version = "0.6.2"
+version = "0.6.3"
 edition = "2024"
 description = "Coalbox password manager core library"
 
 [dependencies]
 aes-gcm = "0.10"
+aes = "0.8"
+cbc = "0.1"
 argon2 = "0.5"
 rand = "0.8"
 serde = { version = "1", features = ["derive"] }

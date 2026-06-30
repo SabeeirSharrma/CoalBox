@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use std::process;
 
 use coalbox_core::{
-    audit_passwords, check_password, export_file, generate_passphrase, generate_password,
+    audit_passwords, check_password, generate_passphrase, generate_password,
     import_file, Entry, ImportFormat, PassphraseConfig, PasswordConfig, TotpConfig, Vault,
 };
 
@@ -14,7 +14,7 @@ const EXIT_ERROR: i32 = 1;
 #[derive(Parser)]
 #[command(
     name = "coalbox",
-    version = "0.5.0",
+    version = "0.6.3",
     about = "Coalbox password manager",
     after_help = "Run 'coalbox <command> --help' for more information on a specific command."
 )]
@@ -159,10 +159,15 @@ enum Commands {
         vault: Option<String>,
     },
 
-    /// Export entries to a file
-    Export {
+    /// Migrate vault to another encrypted format
+    Migrate {
+        /// Target format (kdbx, bitwarden)
+        #[arg(short = 't', long)]
+        to: String,
+
         /// Output file path
-        file: String,
+        #[arg(short, long)]
+        output: String,
 
         /// Vault file path
         #[arg(short, long)]
@@ -722,7 +727,7 @@ fn import_entries(cli: &Cli, file: &str, format: &str, vault_path_opt: &Option<S
     }
 }
 
-fn export_entries(cli: &Cli, file: &str, vault_path_opt: &Option<String>) {
+fn migrate_vault(cli: &Cli, target: &str, output: &str, vault_path_opt: &Option<String>) {
     let (vault, _password) = unlock_vault(cli, vault_path_opt);
 
     let entries = match vault.list_entries() {
@@ -730,7 +735,7 @@ fn export_entries(cli: &Cli, file: &str, vault_path_opt: &Option<String>) {
         Err(e) => exit_error(cli, &format!("Failed to list entries: {}", e)),
     };
 
-    let path = PathBuf::from(shellexpand::tilde(file).to_string());
+    let path = PathBuf::from(shellexpand::tilde(output).to_string());
 
     if let Some(parent) = path.parent()
         && !parent.exists()
@@ -738,24 +743,52 @@ fn export_entries(cli: &Cli, file: &str, vault_path_opt: &Option<String>) {
         std::fs::create_dir_all(parent).expect("Failed to create output directory");
     }
 
-    match export_file(&entries, &path) {
+    let export_password = prompt_password("Enter export password: ");
+    let confirm = prompt_password("Confirm export password: ");
+
+    if export_password != confirm {
+        exit_error(cli, "Export passwords don't match");
+    }
+
+    if export_password.len() < 8 {
+        exit_error(cli, "Export password must be at least 8 characters");
+    }
+
+    if !cli.quiet && !cli.json {
+        println!(
+            "{} Migrating {} entries to {}...",
+            "→".cyan(),
+            entries.len(),
+            target
+        );
+    }
+
+    let result = match target.to_lowercase().as_str() {
+        "kdbx" => coalbox_core::migrate::export_kdbx(&entries, &path, &export_password),
+        "bitwarden" => coalbox_core::migrate::export_bitwarden_encrypted(&entries, &path, &export_password),
+        _ => exit_error(cli, &format!("Unsupported target format: {}. Use 'kdbx' or 'bitwarden'.", target)),
+    };
+
+    match result {
         Ok(()) => {
             if cli.json {
                 json_output(&serde_json::json!({
                     "ok": true,
                     "exported": entries.len(),
+                    "format": target,
                     "path": path.display().to_string()
                 }));
             } else if !cli.quiet {
                 println!(
-                    "{} Exported {} entries to {}",
+                    "{} Migrated {} entries to {} ({})",
                     "✓".green().bold(),
                     entries.len().to_string().green().bold(),
-                    path.display()
+                    path.display(),
+                    target
                 );
             }
         }
-        Err(e) => exit_error(cli, &format!("Export failed: {}", e)),
+        Err(e) => exit_error(cli, &format!("Migration failed: {}", e)),
     }
 }
 
@@ -983,9 +1016,9 @@ fn main() {
             let c = Cli { json, quiet, command: Commands::Import { file: file.clone(), format: format.clone(), vault: vault.clone() } };
             import_entries(&c, &file, &format, &vault);
         }
-        Commands::Export { file, vault } => {
-            let c = Cli { json, quiet, command: Commands::Export { file: file.clone(), vault: vault.clone() } };
-            export_entries(&c, &file, &vault);
+        Commands::Migrate { to, output, vault } => {
+            let c = Cli { json, quiet, command: Commands::Migrate { to: to.clone(), output: output.clone(), vault: vault.clone() } };
+            migrate_vault(&c, &to, &output, &vault);
         }
     }
 }

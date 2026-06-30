@@ -58,16 +58,6 @@ pub fn import_file(path: &Path, format: ImportFormat) -> Result<ImportResult, Co
     }
 }
 
-pub fn export_json(entries: &[Entry]) -> Result<String, CoalboxError> {
-    serde_json::to_string_pretty(entries).map_err(CoalboxError::Json)
-}
-
-pub fn export_file(entries: &[Entry], path: &Path) -> Result<(), CoalboxError> {
-    let json = export_json(entries)?;
-    std::fs::write(path, json)?;
-    Ok(())
-}
-
 fn import_csv(data: &str) -> Result<ImportResult, CoalboxError> {
     let mut reader = csv::Reader::from_reader(data.as_bytes());
     let mut entries = Vec::new();
@@ -550,23 +540,6 @@ mod tests {
 
         let result = import_keepass_xml(xml).unwrap();
         assert!(!result.entries.is_empty());
-    }
-
-    #[test]
-    fn test_export_json() {
-        let entries = vec![
-            Entry::new_login(
-                "GitHub".to_string(),
-                "user".to_string(),
-                "pass".to_string(),
-            ),
-            Entry::new_note("My Note".to_string(), "Secret content".to_string()),
-        ];
-
-        let json = export_json(&entries).unwrap();
-        let parsed: Vec<serde_json::Value> = serde_json::from_str(&json).unwrap();
-        assert_eq!(parsed.len(), 2);
-        assert_eq!(parsed[0]["title"], "GitHub");
     }
 
     #[test]

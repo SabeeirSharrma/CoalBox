@@ -187,7 +187,35 @@ Checks passwords against the HaveIBeenPwned Pwned Passwords database using the k
 
 Breach checking requires internet. It can be disabled entirely in settings for air-gapped use.
 
-### 3.7 Vault Sync
+### 3.7 Migration (Export to Other Formats)
+
+Coalbox does not support plaintext export. Vault encryption (AES-256-GCM + Argon2id) is strong enough that the actual weak point in any export flow is the moment decrypted data touches disk unencrypted — even briefly, even as a "temp file we delete after." That moment is the attack surface, not the vault itself.
+
+Instead, Coalbox provides `coalbox migrate`, a direct migration tool. Decrypted vault data exists only in memory for the duration of the migration and is zeroed immediately after (same zeroize discipline as the rest of Coalbox Core). No intermediate plaintext file is ever written, not even temporarily.
+
+**Targets:**
+
+- **KDBX (KeePass format)** — the primary target. KDBX is itself an encrypted container (AES/ChaCha20 + Argon2), so data leaving Coalbox stays encrypted the entire time, just under a different format. KDBX functions as the universal bridge: KeePass, KeePassXC, 1Password, and most other major password managers can import `.kdbx` directly. This means Coalbox only needs to maintain one migration path to cover nearly every destination.
+- **Bitwarden encrypted export** — a secondary target for users moving specifically to Bitwarden, since Bitwarden's importer prefers its own encrypted export format over KDBX.
+
+1Password's native export format (1PUX) is deliberately not supported as a direct target, since it isn't encrypted at rest by default. Anyone migrating to 1Password goes through the KDBX path, which 1Password imports natively.
+
+**Flow:**
+
+```bash
+coalbox migrate --to kdbx --output ~/vault.kdbx
+coalbox migrate --to bitwarden --output ~/export.json
+```
+
+Each command prompts for the Coalbox master password to unlock the vault, then a separate export password to protect the new file — the export password is never the same as the master password, and is never reused or stored. Entries are streamed directly into the target format's encrypted writer as the vault is read, so nothing decrypted is ever held longer than necessary or written anywhere unencrypted.
+
+**WebUI support:**
+
+Migration is also available through the `coalbox-web` interface. The WebUI exposes a Migrate panel where the user selects a target format (KDBX or Bitwarden), is prompted for the Coalbox master password (vault must be unlocked) and a separate export password through the same form, and the resulting file is generated server-side and offered as a direct browser download.
+
+The same in-memory-only guarantee applies regardless of entry point — whether triggered via CLI or WebUI, decrypted vault data is never written to disk unencrypted, and the generated file is only ever the final encrypted output (`.kdbx` or Bitwarden's encrypted export), streamed straight to the response/download rather than staged as a temp file on the server.
+
+### 3.8 Vault Sync
 
 Coalbox does not operate any sync server. Sync is the user's responsibility.
 
@@ -209,7 +237,7 @@ coalbox get example.com                 # retrieve entry by URL or title
 coalbox add                             # interactive entry creation
 coalbox generate --length 32 --symbols  # generate a password
 coalbox audit                           # run breach check on all entries
-coalbox export --format json            # export to plaintext JSON
+coalbox migrate --to kdbx --output ~/vault.kdbx  # migrate to KDBX
 coalbox lock                            # lock the vault daemon
 ```
 

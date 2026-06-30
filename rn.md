@@ -1,19 +1,27 @@
-# v0.6.2 — WebUI Polish
+# v0.6.3 — Migration System
 
 ## What's new
 
-- **Create vault from UI** — form appears when no vault exists
-- **Enter key submits all forms** — unlock, create vault, create/edit entry
-- **Copy from generator** — paste generated password directly into password field
-- **TOTP countdown bar** — visual timer with progress bar
-- **Keyboard shortcuts** — `Ctrl+K` search, `Ctrl+N` new entry, `Esc` close modals
-- **Favourites** — star/unstar entries, filter sidebar by favourites
-- **Tags in sidebar** — filter by tag, badge counts
-- **Import/Export from UI** — import CSV/Bitwarden/KeePass/1Password, export JSON
-- **Clipboard auto-clear** — copy clears after 30 seconds
-- **Vault info panel** — vault stats (path, entries, format, cipher, KDF)
-- **Empty state** — better UX when vault has no entries
-- **Entry type icons** — visual distinction between login, note, card, identity
+- **`coalbox migrate` command** — export vault to encrypted KDBX or Bitwarden format
+- **No plaintext export** — Coalbox never writes decrypted data to disk
+- **KDBX (KeePass)** — primary target, universal bridge to all major password managers
+- **Bitwarden encrypted export** — secondary target for Bitwarden users
+- **WebUI migrate panel** — migrate from the browser with encrypted download
+- **Removed plaintext JSON export** — security: decrypted data never touches disk
+
+## Usage
+
+```bash
+# Migrate to KDBX (importable by KeePass, KeePassXC, 1Password, etc.)
+coalbox migrate --to kdbx --output ~/vault.kdbx
+
+# Migrate to Bitwarden encrypted export
+coalbox migrate --to bitwarden --output ~/export.json
+```
+
+Each command prompts for:
+1. Master password (to unlock vault)
+2. Export password (to protect the new file — never the same as master)
 
 ## Build from source
 
@@ -24,7 +32,3 @@ cargo build --release
 ```
 
 Requires Rust 1.85+.
-
-## Checksums
-
-Pre-built binaries are for SHA-256 verification only. Do not use them directly.

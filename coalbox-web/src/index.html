@@ -90,7 +90,7 @@
                     <span id="entry-count" class="text-xs text-slate-400"></span>
                     <button id="btn-generate" class="text-xs px-2 py-1 glass hover:bg-gray-700 rounded" title="Generate password"><i data-lucide="wand-2" class="w-4 h-4"></i></button>
                     <button id="btn-import" class="text-xs px-2 py-1 glass hover:bg-gray-700 rounded" title="Import"><i data-lucide="download" class="w-4 h-4"></i></button>
-                    <button id="btn-export" class="text-xs px-2 py-1 glass hover:bg-gray-700 rounded" title="Export"><i data-lucide="upload" class="w-4 h-4"></i></button>
+                    <button id="btn-migrate" class="text-xs px-2 py-1 glass hover:bg-gray-700 rounded" title="Migrate"><i data-lucide="arrow-right-left" class="w-4 h-4"></i></button>
                     <button id="btn-info" class="text-xs px-2 py-1 glass hover:bg-gray-700 rounded" title="Vault info"><i data-lucide="info" class="w-4 h-4"></i></button>
                     <button id="btn-lock" class="text-xs px-2 py-1 glass hover:bg-gray-700 rounded text-red-400" title="Lock vault"><i data-lucide="lock" class="w-4 h-4"></i></button>
                 </div>
@@ -244,6 +244,34 @@
                     <button id="import-submit" class="w-full py-2 btn-primary rounded text-sm font-medium">Import</button>
                 </div>
                 <button onclick="hideModal('modal-import')" class="absolute top-3 right-3 text-slate-400 hover:text-gray-300 text-xl">&times;</button>
+            </div>
+        </div>
+
+        <!-- Modal: Migrate -->
+        <div id="modal-migrate" class="fixed inset-0 bg-black/60 hidden items-center justify-center z-50">
+            <div class="glass-card rounded-xl w-full max-w-md p-6 relative">
+                <h2 class="text-lg font-bold mb-4">Migrate Vault</h2>
+                <div class="space-y-3">
+                    <p class="text-sm text-slate-400">Export your vault to an encrypted format. Decrypted data is never written to disk.</p>
+                    <div>
+                        <label class="text-sm text-slate-400 block mb-1">Target format</label>
+                        <select id="migrate-target" class="w-full px-3 py-2 glass-input rounded text-sm">
+                            <option value="kdbx">KDBX (KeePass)</option>
+                            <option value="bitwarden">Bitwarden Encrypted</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-sm text-slate-400 block mb-1">Export password</label>
+                        <input type="password" id="migrate-password" placeholder="Enter export password" class="w-full px-3 py-2 glass-input rounded text-sm">
+                    </div>
+                    <div>
+                        <label class="text-sm text-slate-400 block mb-1">Confirm export password</label>
+                        <input type="password" id="migrate-password-confirm" placeholder="Confirm password" class="w-full px-3 py-2 glass-input rounded text-sm">
+                    </div>
+                    <div id="migrate-result" class="text-sm hidden"></div>
+                    <button id="migrate-submit" class="w-full py-2 btn-primary rounded text-sm font-medium">Migrate</button>
+                </div>
+                <button onclick="hideModal('modal-migrate')" class="absolute top-3 right-3 text-slate-400 hover:text-gray-300 text-xl">&times;</button>
             </div>
         </div>
     </div>
@@ -547,12 +575,7 @@
     // Header buttons
     document.getElementById('btn-lock').onclick = async () => { await api.post('/api/lock'); showAuth(); };
     document.getElementById('btn-import').onclick = () => showModal('modal-import');
-    document.getElementById('btn-export').onclick = async () => {
-        const res = await api.get('/api/entries');
-        if (!res.ok) return;
-        const blob = new Blob([JSON.stringify(res.data, null, 2)], { type: 'application/json' });
-        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'coalbox-export.json'; a.click();
-    };
+    document.getElementById('btn-migrate').onclick = () => showModal('modal-migrate');
     document.getElementById('btn-info').onclick = async () => {
         const res = await api.get('/api/status');
         lucide.createIcons();
@@ -712,6 +735,33 @@
         }
     };
 
+    // Migrate
+    document.getElementById('migrate-submit').onclick = async () => {
+        const target = document.getElementById('migrate-target').value;
+        const password = document.getElementById('migrate-password').value;
+        const confirm = document.getElementById('migrate-password-confirm').value;
+        const resultEl = document.getElementById('migrate-result');
+
+        if (!password) { resultEl.textContent = 'Enter export password'; resultEl.classList.remove('hidden'); return; }
+        if (password !== confirm) { resultEl.textContent = 'Passwords do not match'; resultEl.classList.remove('hidden'); return; }
+        if (password.length < 8) { resultEl.textContent = 'Password must be at least 8 characters'; resultEl.classList.remove('hidden'); return; }
+
+        const res = await api.post('/api/migrate', { target, password });
+        if (res.ok) {
+            const d = res.data;
+            const binary = atob(d.data);
+            const bytes = new Uint8Array(binary.length);
+            for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+            const blob = new Blob([bytes], { type: target === 'kdbx' ? 'application/octet-stream' : 'application/json' });
+            const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = d.filename; a.click();
+            resultEl.innerHTML = `<span class="text-green-400">✓ Migrated ${d.size} bytes</span>`;
+            resultEl.classList.remove('hidden');
+        } else {
+            resultEl.innerHTML = `<span class="text-red-400">✗ ${res.error}</span>`;
+            resultEl.classList.remove('hidden');
+        }
+    };
+
     // Keyboard shortcuts
     document.addEventListener('keydown', (e) => {
         // Ctrl+K → focus search
@@ -726,7 +776,7 @@
         }
         // Escape → close modals
         if (e.key === 'Escape') {
-            ['modal-generate', 'modal-entry', 'modal-info', 'modal-import'].forEach(id => {
+            ['modal-generate', 'modal-entry', 'modal-info', 'modal-import', 'modal-migrate'].forEach(id => {
                 const m = document.getElementById(id);
                 if (!m.classList.contains('hidden')) { hideModal(id); genTargetField = null; }
             });
