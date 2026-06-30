@@ -57,6 +57,14 @@ cleanup() {
         info "Rust removed"
     fi
 
+    if [ "${GIT_WAS_PRESENT}" -eq 0 ] && command -v git &>/dev/null; then
+        if command -v pacman &>/dev/null; then
+            sudo pacman -Rns --noconfirm git 2>/dev/null || true
+        elif command -v apt-get &>/dev/null; then
+            sudo apt-get remove -y -qq git 2>/dev/null || true
+        fi
+    fi
+
     # Always clean up build directory
     if [ -d "${BUILD_DIR:-}" ]; then
         rm -rf "$BUILD_DIR"
