@@ -1,14 +1,29 @@
 <!DOCTYPE html>
-<html lang="en" class="h-full bg-gray-950 text-gray-100">
+<html lang="en" class="h-full text-slate-100 antialiased">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Coalbox</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        body { font-family: 'Inter', sans-serif; background: #27272a; }
+        .glass { background: #3f3f46; border: 1px solid #52525b; }
+        .glass-card { background: #18181b; border: 1px solid #3f3f46; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5); }
+        .glass-input { background: #27272a; border: 1px solid #52525b; transition: all 0.2s ease; }
+        .glass-input:focus { border-color: #fbbf24; box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.2); outline: none; }
+        .btn-primary { background: linear-gradient(to right, #d97706, #b45309); box-shadow: 0 4px 14px 0 rgba(217, 119, 6, 0.39); transition: all 0.2s ease; }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(217, 119, 6, 0.4); }
         [x-cloak] { display: none !important; }
         .totp-bar { transition: width 1s linear; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.2); }
     </style>
+
 </head>
 <body class="h-full">
     <div id="app" class="h-full flex flex-col">
@@ -17,23 +32,23 @@
         <div id="auth-screen" class="flex-1 flex items-center justify-center">
             <div class="w-full max-w-sm p-8">
                 <div class="text-center mb-8">
-                    <h1 class="text-3xl font-bold text-amber-400">Coalbox</h1>
-                    <p class="text-gray-500 mt-2 text-sm">Local-first password manager</p>
+                    <h1 class="text-3xl font-bold text-amber-400 drop-shadow-md">Coalbox</h1>
+                    <p class="text-slate-400 mt-2 text-sm">Local-first password manager</p>
                 </div>
 
                 <!-- Unlock form -->
                 <form id="unlock-form" class="space-y-4">
-                    <p id="unlock-subtitle" class="text-center text-sm text-gray-400">Unlock your vault</p>
+                    <p id="unlock-subtitle" class="text-center text-sm text-slate-300">Unlock your vault</p>
                     <input
                         type="password"
                         id="unlock-password"
                         placeholder="Master password"
-                        class="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg focus:outline-none focus:border-amber-500 text-gray-100 placeholder-gray-500"
+                        class="w-full px-4 py-3 glass-card rounded-lg focus:outline-none focus:border-amber-500 text-gray-100 placeholder-gray-500"
                         autofocus
                     >
                     <button
                         type="submit"
-                        class="w-full py-3 bg-amber-600 hover:bg-amber-500 rounded-lg font-medium transition-colors"
+                        class="w-full py-3 btn-primary rounded-lg font-medium transition-colors"
                     >Unlock</button>
                     <p id="unlock-error" class="text-red-400 text-sm text-center hidden"></p>
                     <p class="text-center text-xs text-gray-600">No vault? <button type="button" id="show-create" class="text-amber-500 hover:underline">Create one</button></p>
@@ -41,22 +56,22 @@
 
                 <!-- Create vault form -->
                 <form id="create-form" class="space-y-4 hidden">
-                    <p class="text-center text-sm text-gray-400">Create a new vault</p>
+                    <p class="text-center text-sm text-slate-300">Create a new vault</p>
                     <input
                         type="password"
                         id="create-password"
                         placeholder="Master password (min 8 chars)"
-                        class="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg focus:outline-none focus:border-amber-500 text-gray-100 placeholder-gray-500"
+                        class="w-full px-4 py-3 glass-card rounded-lg focus:outline-none focus:border-amber-500 text-gray-100 placeholder-gray-500"
                     >
                     <input
                         type="password"
                         id="create-confirm"
                         placeholder="Confirm password"
-                        class="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg focus:outline-none focus:border-amber-500 text-gray-100 placeholder-gray-500"
+                        class="w-full px-4 py-3 glass-card rounded-lg focus:outline-none focus:border-amber-500 text-gray-100 placeholder-gray-500"
                     >
                     <button
                         type="submit"
-                        class="w-full py-3 bg-amber-600 hover:bg-amber-500 rounded-lg font-medium transition-colors"
+                        class="w-full py-3 btn-primary rounded-lg font-medium transition-colors"
                     >Create Vault</button>
                     <p id="create-error" class="text-red-400 text-sm text-center hidden"></p>
                     <p class="text-center text-xs text-gray-600">Have a vault? <button type="button" id="show-unlock" class="text-amber-500 hover:underline">Unlock it</button></p>
@@ -69,13 +84,14 @@
 
             <!-- Header -->
             <header class="flex items-center justify-between px-4 py-2 border-b border-gray-800 shrink-0">
-                <h1 class="text-lg font-bold text-amber-400">Coalbox</h1>
+                <h1 class="text-lg font-bold text-amber-400 drop-shadow-md">Coalbox</h1>
                 <div class="flex items-center gap-2">
-                    <span id="entry-count" class="text-xs text-gray-500"></span>
-                    <button id="btn-import" class="text-xs px-2 py-1 bg-gray-800 hover:bg-gray-700 rounded" title="Import">Import</button>
-                    <button id="btn-export" class="text-xs px-2 py-1 bg-gray-800 hover:bg-gray-700 rounded" title="Export">Export</button>
-                    <button id="btn-info" class="text-xs px-2 py-1 bg-gray-800 hover:bg-gray-700 rounded" title="Vault info">Info</button>
-                    <button id="btn-lock" class="text-xs px-2 py-1 bg-gray-800 hover:bg-gray-700 rounded text-red-400" title="Lock vault">Lock</button>
+                    <span id="entry-count" class="text-xs text-slate-400"></span>
+                    <button id="btn-generate" class="text-xs px-2 py-1 glass hover:bg-gray-700 rounded" title="Generate password"><i data-lucide="wand-2" class="w-4 h-4"></i></button>
+                    <button id="btn-import" class="text-xs px-2 py-1 glass hover:bg-gray-700 rounded" title="Import"><i data-lucide="download" class="w-4 h-4"></i></button>
+                    <button id="btn-export" class="text-xs px-2 py-1 glass hover:bg-gray-700 rounded" title="Export"><i data-lucide="upload" class="w-4 h-4"></i></button>
+                    <button id="btn-info" class="text-xs px-2 py-1 glass hover:bg-gray-700 rounded" title="Vault info"><i data-lucide="info" class="w-4 h-4"></i></button>
+                    <button id="btn-lock" class="text-xs px-2 py-1 glass hover:bg-gray-700 rounded text-red-400" title="Lock vault"><i data-lucide="lock" class="w-4 h-4"></i></button>
                 </div>
             </header>
 
@@ -86,18 +102,23 @@
                     <!-- Search -->
                     <div class="p-2 border-b border-gray-800">
                         <div class="relative">
-                            <input type="text" id="search-input" placeholder="Search... (Ctrl+K)" class="w-full px-3 py-1.5 bg-gray-900 border border-gray-700 rounded text-sm focus:outline-none focus:border-amber-500 pr-8">
+                            <input type="text" id="search-input" placeholder="Search... (Ctrl+K)" class="w-full px-3 py-1.5 glass-card rounded text-sm focus:outline-none focus:border-amber-500 pr-8">
                             <span class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-600 text-xs">⌘K</span>
                         </div>
                     </div>
 
+                    
                     <!-- Filter tabs -->
                     <div class="flex border-b border-gray-800 text-xs">
-                        <button class="filter-tab flex-1 py-1.5 text-amber-400 border-b-2 border-amber-400" data-filter="all">All</button>
-                        <button class="filter-tab flex-1 py-1.5 text-gray-500 hover:text-gray-300" data-filter="favourites">★ Favs</button>
-                        <button class="filter-tab flex-1 py-1.5 text-gray-500 hover:text-gray-300" data-filter="logins">Keys</button>
-                        <button class="filter-tab flex-1 py-1.5 text-gray-500 hover:text-gray-300" data-filter="notes">Notes</button>
+                        <button class="filter-tab flex-1 py-2 text-slate-300 hover:text-amber-400 drop-shadow-md border-b-2 border-transparent transition-colors" data-filter="all">All</button>
+                        <button class="filter-tab flex-1 py-2 text-slate-300 hover:text-amber-400 drop-shadow-md border-b-2 border-transparent transition-colors" data-filter="favourites"><i data-lucide="star" class="w-4 h-4 inline-block mr-1"></i>Favs</button>
+                        <button class="filter-tab flex-1 py-2 text-slate-300 hover:text-amber-400 drop-shadow-md border-b-2 border-transparent transition-colors" data-filter="logins">Logins</button>
                     </div>
+                    <div class="flex border-b border-gray-800 text-sm font-medium">
+                        <button id="tab-vault" class="flex-1 py-2 text-amber-400 drop-shadow-md border-b-2 border-amber-400 glass-card/50">Vault</button>
+                        <button id="tab-authenticator" class="flex-1 py-2 text-slate-400 hover:text-gray-300 hover:glass/50">Authenticator</button>
+                    </div>
+
 
                     <!-- Tags -->
                     <div id="tags-bar" class="flex gap-1 px-2 py-1.5 border-b border-gray-800 overflow-x-auto hidden"></div>
@@ -107,16 +128,16 @@
 
                     <!-- Add button -->
                     <div class="p-2 border-t border-gray-800">
-                        <button id="btn-add" class="w-full py-1.5 bg-amber-600 hover:bg-amber-500 rounded text-sm font-medium">+ New Entry <span class="text-xs opacity-60 ml-1">Ctrl+N</span></button>
+                        <button id="btn-add" class="w-full py-1.5 btn-primary rounded text-sm font-medium">+ New Entry <span class="text-xs opacity-60 ml-1">Ctrl+N</span></button>
                     </div>
                 </aside>
 
                 <!-- Content -->
                 <main class="flex-1 overflow-y-auto p-6" id="content-area">
-                    <div class="text-center text-gray-500 mt-20">
-                        <p class="text-4xl mb-4">🔒</p>
+                    <div class="text-center text-slate-400 mt-20">
+                        <div class="flex justify-center mb-4 text-slate-600"><i data-lucide="lock" class="w-16 h-16 opacity-50"></i></div>
                         <p class="text-lg">Select an entry</p>
-                        <p class="text-sm mt-1">or press <kbd class="px-1.5 py-0.5 bg-gray-800 rounded text-xs">Ctrl+N</kbd> to create one</p>
+                        <p class="text-sm mt-1">or press <kbd class="px-1.5 py-0.5 glass rounded text-xs">Ctrl+N</kbd> to create one</p>
                     </div>
                 </main>
             </div>
@@ -124,27 +145,27 @@
 
         <!-- Modal: Generate -->
         <div id="modal-generate" class="fixed inset-0 bg-black/60 hidden items-center justify-center z-50">
-            <div class="bg-gray-900 border border-gray-700 rounded-xl w-full max-w-md p-6 relative">
+            <div class="glass-card rounded-xl w-full max-w-md p-6 relative">
                 <h2 class="text-lg font-bold mb-4">Password Generator</h2>
                 <div class="space-y-3">
                     <div class="flex gap-2">
                         <button id="gen-type-password" class="flex-1 py-1.5 bg-amber-600 rounded text-sm">Password</button>
-                        <button id="gen-type-passphrase" class="flex-1 py-1.5 bg-gray-800 rounded text-sm">Passphrase</button>
+                        <button id="gen-type-passphrase" class="flex-1 py-1.5 glass rounded text-sm">Passphrase</button>
                     </div>
                     <div id="gen-password-opts" class="space-y-2">
                         <label class="flex items-center gap-2 text-sm">
                             <span class="w-16">Length:</span>
-                            <input type="number" id="gen-length" value="20" min="8" max="128" class="w-20 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-sm">
+                            <input type="number" id="gen-length" value="20" min="8" max="128" class="w-20 px-2 py-1 glass-input rounded text-sm">
                         </label>
                     </div>
                     <div id="gen-passphrase-opts" class="space-y-2 hidden">
                         <label class="flex items-center gap-2 text-sm">
                             <span class="w-16">Words:</span>
-                            <input type="number" id="gen-words" value="6" min="3" max="12" class="w-20 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-sm">
+                            <input type="number" id="gen-words" value="6" min="3" max="12" class="w-20 px-2 py-1 glass-input rounded text-sm">
                         </label>
                         <label class="flex items-center gap-2 text-sm">
                             <span class="w-16">Separator:</span>
-                            <input type="text" id="gen-separator" value=" " class="w-20 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-sm">
+                            <input type="text" id="gen-separator" value=" " class="w-20 px-2 py-1 glass-input rounded text-sm">
                         </label>
                         <label class="flex items-center gap-2 text-sm">
                             <input type="checkbox" id="gen-capitalize" checked> Capitalize
@@ -153,64 +174,64 @@
                             <input type="checkbox" id="gen-number"> Add number
                         </label>
                     </div>
-                    <div class="bg-gray-800 p-3 rounded font-mono text-sm break-all select-all" id="gen-result">—</div>
+                    <div class="glass p-3 rounded font-mono text-sm break-all select-all" id="gen-result">—</div>
                     <div class="flex gap-2">
-                        <button id="gen-refresh" class="flex-1 py-2 bg-gray-800 hover:bg-gray-700 rounded text-sm">Regenerate</button>
+                        <button id="gen-refresh" class="flex-1 py-2 glass hover:bg-gray-700 rounded text-sm">Regenerate</button>
                         <button id="gen-copy" class="flex-1 py-2 bg-gray-700 hover:bg-gray-600 rounded text-sm">Copy</button>
-                        <button id="gen-use" class="flex-1 py-2 bg-amber-600 hover:bg-amber-500 rounded text-sm hidden">Use</button>
+                        <button id="gen-use" class="flex-1 py-2 btn-primary rounded text-sm hidden">Use</button>
                     </div>
                 </div>
-                <button id="gen-close" class="absolute top-3 right-3 text-gray-500 hover:text-gray-300 text-xl">&times;</button>
+                <button id="gen-close" class="absolute top-3 right-3 text-slate-400 hover:text-gray-300 text-xl">&times;</button>
             </div>
         </div>
 
         <!-- Modal: Add/Edit Entry -->
         <div id="modal-entry" class="fixed inset-0 bg-black/60 hidden items-center justify-center z-50">
-            <div class="bg-gray-900 border border-gray-700 rounded-xl w-full max-w-lg p-6 relative">
+            <div class="glass-card rounded-xl w-full max-w-lg p-6 relative">
                 <h2 id="modal-entry-title" class="text-lg font-bold mb-4">New Entry</h2>
                 <form id="entry-form" class="space-y-3">
                     <input type="hidden" id="entry-id">
-                    <select id="entry-type" class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded text-sm">
+                    <select id="entry-type" class="w-full px-3 py-2 glass-input rounded text-sm">
                         <option value="login">Login</option>
                         <option value="note">Secure Note</option>
                     </select>
-                    <input type="text" id="entry-title" placeholder="Title" class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded text-sm" required>
+                    <input type="text" id="entry-title" placeholder="Title" class="w-full px-3 py-2 glass-input rounded text-sm" required>
                     <div id="login-fields">
-                        <input type="text" id="entry-username" placeholder="Username" class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded text-sm mb-2">
+                        <input type="text" id="entry-username" placeholder="Username" class="w-full px-3 py-2 glass-input rounded text-sm mb-2">
                         <div class="flex gap-1 mb-2">
-                            <input type="text" id="entry-password" placeholder="Password" class="flex-1 px-3 py-2 bg-gray-800 border border-gray-700 rounded text-sm">
-                            <button type="button" id="entry-gen-pw" class="px-3 py-2 bg-gray-700 hover:bg-gray-600 rounded text-sm" title="Generate password">🎲</button>
-                            <button type="button" id="entry-copy-pw" class="px-3 py-2 bg-gray-700 hover:bg-gray-600 rounded text-sm" title="Copy password">📋</button>
+                            <input type="text" id="entry-password" placeholder="Password" class="flex-1 px-3 py-2 glass-input rounded text-sm">
+                            <button type="button" id="entry-gen-pw" class="px-3 py-2 glass hover:bg-gray-700 rounded text-sm flex items-center justify-center" title="Generate password"><i data-lucide="wand-2" class="w-4 h-4"></i></button>
+                            <button type="button" id="entry-copy-pw" class="px-3 py-2 glass hover:bg-gray-700 rounded text-sm flex items-center justify-center" title="Copy password"><i data-lucide="copy" class="w-4 h-4"></i></button>
                         </div>
-                        <input type="text" id="entry-url" placeholder="URL" class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded text-sm mb-2">
-                        <input type="text" id="entry-totp" placeholder="TOTP secret (base32)" class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded text-sm mb-2">
+                        <input type="text" id="entry-url" placeholder="URL" class="w-full px-3 py-2 glass-input rounded text-sm mb-2">
+                        <input type="text" id="entry-totp" placeholder="TOTP secret (base32)" class="w-full px-3 py-2 glass-input rounded text-sm mb-2">
                     </div>
-                    <textarea id="entry-notes" placeholder="Notes" rows="3" class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded text-sm"></textarea>
+                    <textarea id="entry-notes" placeholder="Notes" rows="3" class="w-full px-3 py-2 glass-input rounded text-sm"></textarea>
                     <div class="flex gap-2 pt-1">
-                        <button type="submit" class="flex-1 py-2 bg-amber-600 hover:bg-amber-500 rounded text-sm font-medium">Save</button>
-                        <button type="button" id="entry-cancel" class="flex-1 py-2 bg-gray-800 hover:bg-gray-700 rounded text-sm">Cancel</button>
+                        <button type="submit" class="flex-1 py-2 btn-primary rounded text-sm font-medium">Save</button>
+                        <button type="button" id="entry-cancel" class="flex-1 py-2 glass hover:bg-gray-700 rounded text-sm">Cancel</button>
                     </div>
                 </form>
-                <button id="entry-modal-close" class="absolute top-3 right-3 text-gray-500 hover:text-gray-300 text-xl">&times;</button>
+                <button id="entry-modal-close" class="absolute top-3 right-3 text-slate-400 hover:text-gray-300 text-xl">&times;</button>
             </div>
         </div>
 
         <!-- Modal: Vault Info -->
         <div id="modal-info" class="fixed inset-0 bg-black/60 hidden items-center justify-center z-50">
-            <div class="bg-gray-900 border border-gray-700 rounded-xl w-full max-w-sm p-6 relative">
+            <div class="glass-card rounded-xl w-full max-w-sm p-6 relative">
                 <h2 class="text-lg font-bold mb-4">Vault Info</h2>
                 <div id="info-content" class="space-y-2 text-sm"></div>
-                <button onclick="hideModal('modal-info')" class="absolute top-3 right-3 text-gray-500 hover:text-gray-300 text-xl">&times;</button>
+                <button onclick="hideModal('modal-info')" class="absolute top-3 right-3 text-slate-400 hover:text-gray-300 text-xl">&times;</button>
             </div>
         </div>
 
         <!-- Modal: Import -->
         <div id="modal-import" class="fixed inset-0 bg-black/60 hidden items-center justify-center z-50">
-            <div class="bg-gray-900 border border-gray-700 rounded-xl w-full max-w-md p-6 relative">
+            <div class="glass-card rounded-xl w-full max-w-md p-6 relative">
                 <h2 class="text-lg font-bold mb-4">Import Entries</h2>
                 <div class="space-y-3">
-                    <input type="file" id="import-file" accept=".csv,.json,.xml,.1pux" class="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:bg-amber-600 file:text-white hover:file:bg-amber-500">
-                    <select id="import-format" class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded text-sm">
+                    <input type="file" id="import-file" accept=".csv,.json,.xml,.1pux" class="w-full text-sm text-slate-300 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:bg-amber-600 file:text-white hover:file:bg-amber-500">
+                    <select id="import-format" class="w-full px-3 py-2 glass-input rounded text-sm">
                         <option value="auto">Auto-detect</option>
                         <option value="csv">CSV</option>
                         <option value="bitwarden">Bitwarden JSON</option>
@@ -218,9 +239,9 @@
                         <option value="1password">1Password 1PUX</option>
                     </select>
                     <div id="import-result" class="text-sm hidden"></div>
-                    <button id="import-submit" class="w-full py-2 bg-amber-600 hover:bg-amber-500 rounded text-sm font-medium">Import</button>
+                    <button id="import-submit" class="w-full py-2 btn-primary rounded text-sm font-medium">Import</button>
                 </div>
-                <button onclick="hideModal('modal-import')" class="absolute top-3 right-3 text-gray-500 hover:text-gray-300 text-xl">&times;</button>
+                <button onclick="hideModal('modal-import')" class="absolute top-3 right-3 text-slate-400 hover:text-gray-300 text-xl">&times;</button>
             </div>
         </div>
     </div>
@@ -231,6 +252,7 @@
     let selectedId = null;
     let activeFilter = 'all';
     let activeTag = null;
+    let activeTab = 'vault';
     let ws = null;
     let genType = 'password';
     let genTargetField = null;
@@ -296,6 +318,7 @@
         if (res.ok) {
             entries = res.data;
             document.getElementById('entry-count').textContent = `${entries.length} entries`;
+            lucide.createIcons();
             renderTags();
             renderList();
         }
@@ -309,8 +332,8 @@
         if (tags.length === 0) { bar.classList.add('hidden'); return; }
         bar.classList.remove('hidden');
         bar.innerHTML = tags.map(([t, c]) =>
-            `<button class="tag-btn shrink-0 px-2 py-0.5 rounded text-xs ${activeTag === t ? 'bg-amber-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'}" data-tag="${esc(t)}">${esc(t)} <span class="opacity-60">${c}</span></button>`
-        ).join('') + `<button class="tag-btn shrink-0 px-2 py-0.5 rounded text-xs ${activeTag === null ? 'bg-amber-600 text-white' : 'bg-gray-800 text-gray-400 hover:bg-gray-700'}" data-tag="">all</button>`;
+            `<button class="tag-btn shrink-0 px-2 py-0.5 rounded text-xs ${activeTag === t ? 'bg-amber-600 text-white' : 'glass text-slate-300 hover:bg-gray-700'}" data-tag="${esc(t)}">${esc(t)} <span class="opacity-60">${c}</span></button>`
+        ).join('') + `<button class="tag-btn shrink-0 px-2 py-0.5 rounded text-xs ${activeTag === null ? 'bg-amber-600 text-white' : 'glass text-slate-300 hover:bg-gray-700'}" data-tag="">all</button>`;
         bar.querySelectorAll('.tag-btn').forEach(b => b.onclick = () => { activeTag = b.dataset.tag || null; renderList(); renderTags(); });
     }
 
@@ -318,6 +341,8 @@
         const list = document.getElementById('entry-list');
         const q = filter.toLowerCase();
         let filtered = entries.filter(e => {
+            if (activeTab === 'authenticator' && e.entry_type !== 'authenticator') return false;
+            if (activeTab !== 'authenticator' && e.entry_type === 'authenticator') return false;
             if (q && !e.title.toLowerCase().includes(q) && !(e.username || '').toLowerCase().includes(q) && !(e.url || '').toLowerCase().includes(q)) return false;
             if (activeFilter === 'favourites' && !e.favourite) return false;
             if (activeFilter === 'logins' && e.entry_type !== 'login') return false;
@@ -329,20 +354,23 @@
         if (filtered.length === 0 && entries.length > 0) {
             list.innerHTML = '<div class="text-center text-gray-600 text-sm mt-8">No entries match</div>';
         } else if (entries.length === 0) {
-            list.innerHTML = '<div class="text-center text-gray-600 text-sm mt-8">No entries yet.<br>Press <kbd class="px-1 py-0.5 bg-gray-800 rounded text-xs">Ctrl+N</kbd></div>';
+            list.innerHTML = '<div class="text-center text-gray-600 text-sm mt-8">No entries yet.<br>Press <kbd class="px-1 py-0.5 glass rounded text-xs">Ctrl+N</kbd></div>';
         } else {
             list.innerHTML = filtered.map(e => {
-                const icons = { login: '🔑', note: '📝', card: '💳', identity: '👤' };
-                const icon = icons[e.entry_type] || '🔑';
-                const sel = e.id === selectedId ? 'bg-gray-800 border-amber-600' : 'border-transparent hover:border-gray-700';
-                const fav = e.favourite ? '<span class="text-amber-400 text-xs ml-auto shrink-0">★</span>' : '';
-                return `<div class="entry-item flex items-center gap-2 px-2 py-1.5 rounded border cursor-pointer ${sel} group" data-id="${e.id}">
-                    <span class="text-sm shrink-0">${icon}</span>
+                
+                const icons = { login: 'key', note: 'file-text', card: 'credit-card', identity: 'user', authenticator: 'shield' };
+                const iconName = icons[e.entry_type] || 'key';
+                const sel = e.id === selectedId ? 'glass border-amber-500/50 shadow-[0_0_10px_rgba(251,191,36,0.15)]' : 'border-transparent hover:glass';
+                const fav = e.favourite ? '<i data-lucide="star" class="w-3.5 h-3.5 text-amber-400 ml-auto shrink-0 fill-current"></i>' : '';
+                return `<div class="entry-item flex items-center gap-2 px-3 py-2 rounded-lg border transition-all cursor-pointer ${sel} group" data-id="${e.id}">
+                    <i data-lucide="${iconName}" class="w-4 h-4 text-slate-400 group-hover:text-amber-400 transition-colors"></i>
+
                     <span class="text-sm truncate flex-1">${esc(e.title)}</span>
                     ${fav}
                 </div>`;
             }).join('');
             list.querySelectorAll('.entry-item').forEach(el => el.onclick = () => selectEntry(el.dataset.id));
+            lucide.createIcons();
         }
     }
 
@@ -355,8 +383,8 @@
         const area = document.getElementById('content-area');
         const typeLabel = { login: 'Login', note: 'Secure Note', card: 'Payment Card', identity: 'Identity' }[e.entry_type] || 'Entry';
         const favBtn = e.favourite
-            ? `<button onclick="toggleFav('${e.id}')" class="text-amber-400 text-lg" title="Remove from favourites">★</button>`
-            : `<button onclick="toggleFav('${e.id}')" class="text-gray-600 hover:text-amber-400 text-lg" title="Add to favourites">☆</button>`;
+            ? `<button onclick="toggleFav('${e.id}')" class="text-amber-400 drop-shadow-md text-lg" title="Remove from favourites"><i data-lucide="star" class="w-5 h-5 fill-current"></i></button>`
+            : `<button onclick="toggleFav('${e.id}')" class="text-gray-600 hover:text-amber-400 drop-shadow-md text-lg" title="Add to favourites">☆</button>`;
 
         let html = `<div class="max-w-2xl">
             <div class="flex items-center justify-between mb-4">
@@ -364,30 +392,30 @@
                     ${favBtn}
                     <div>
                         <h2 class="text-xl font-bold">${esc(e.title)}</h2>
-                        <span class="text-xs text-gray-500">${typeLabel}${(e.tags||[]).length ? ' · ' + e.tags.join(', ') : ''}</span>
+                        <span class="text-xs text-slate-400">${typeLabel}${(e.tags||[]).length ? ' · ' + e.tags.join(', ') : ''}</span>
                     </div>
                 </div>
                 <div class="flex gap-2">
-                    <button onclick="editEntry('${e.id}')" class="px-3 py-1 bg-gray-800 hover:bg-gray-700 rounded text-sm">Edit</button>
-                    <button onclick="deleteEntry('${e.id}')" class="px-3 py-1 bg-gray-800 hover:bg-red-900 rounded text-sm text-red-400">Delete</button>
+                    <button onclick="editEntry('${e.id}')" class="px-3 py-1 glass hover:bg-gray-700 rounded text-sm">Edit</button>
+                    <button onclick="deleteEntry('${e.id}')" class="px-3 py-1 glass hover:bg-red-900 rounded text-sm text-red-400">Delete</button>
                 </div>
             </div>`;
 
         if (e.username) html += fieldRow('Username', e.username, `<span class="text-sm">${esc(e.username)}</span>`, e.username);
         if (e.password) html += fieldRow('Password', 'Password', `<span class="text-sm font-mono">${'•'.repeat(Math.min(e.password.length, 20))}</span>`, e.password);
-        if (e.url) html += fieldRow('URL', 'URL', `<a href="${esc(e.url)}" target="_blank" class="text-amber-400 hover:underline text-sm">${esc(e.url)}</a>`, e.url);
-        if (e.notes) html += `<div class="mb-3"><div class="text-xs text-gray-500 mb-1">Notes</div><div class="text-sm bg-gray-900 p-3 rounded whitespace-pre-wrap">${esc(e.notes)}</div></div>`;
+        if (e.url) html += fieldRow('URL', 'URL', `<a href="${esc(e.url)}" target="_blank" class="text-amber-400 drop-shadow-md hover:underline text-sm">${esc(e.url)}</a>`, e.url);
+        if (e.notes) html += `<div class="mb-3"><div class="text-xs text-slate-400 mb-1">Notes</div><div class="text-sm glass-card p-3 rounded whitespace-pre-wrap">${esc(e.notes)}</div></div>`;
 
         if (e.totp_secret) {
             html += `<div class="mb-3">
-                <div class="text-xs text-gray-500 mb-1">TOTP</div>
-                <div class="flex items-center gap-3 bg-gray-900 p-3 rounded">
-                    <span id="totp-code" class="text-2xl font-mono text-amber-400 tracking-widest">------</span>
+                <div class="text-xs text-slate-400 mb-1">TOTP</div>
+                <div class="flex items-center gap-3 glass-card p-3 rounded">
+                    <span id="totp-code" class="text-2xl font-mono text-amber-400 drop-shadow-md tracking-widest">------</span>
                     <div class="flex-1">
-                        <div class="h-1.5 bg-gray-800 rounded-full overflow-hidden"><div id="totp-bar" class="h-full bg-amber-500 totp-bar" style="width:100%"></div></div>
-                        <span id="totp-remaining" class="text-xs text-gray-500 mt-0.5 block"></span>
+                        <div class="h-1.5 glass rounded-full overflow-hidden"><div id="totp-bar" class="h-full bg-amber-500 totp-bar" style="width:100%"></div></div>
+                        <span id="totp-remaining" class="text-xs text-slate-400 mt-0.5 block"></span>
                     </div>
-                    <button onclick="refreshTotp('${e.id}')" class="text-sm px-2 py-1 bg-gray-800 rounded">↻</button>
+                    <button onclick="refreshTotp('${e.id}')" class="p-1.5 glass rounded hover:text-amber-400 transition-colors"><i data-lucide="refresh-cw" class="w-4 h-4"></i></button>
                 </div>
             </div>`;
             startTotpTimer(e.id);
@@ -396,13 +424,13 @@
         html += `<div class="text-xs text-gray-600 mt-6">
             Created: ${fmtDate(e.created)} · Modified: ${fmtDate(e.modified)}
         </div></div>`;
-        area.innerHTML = html;
+        area.innerHTML = html; lucide.createIcons();
     }
 
     function fieldRow(label, tooltip, display, copyVal) {
-        return `<div class="mb-3 flex items-center justify-between bg-gray-900 p-3 rounded group">
-            <div class="min-w-0"><div class="text-xs text-gray-500 mb-0.5">${label}</div>${display}</div>
-            ${copyVal ? `<button onclick="copyText('${esc(copyVal).replace(/'/g, "\\'")}')" class="text-xs px-2 py-1 bg-gray-800 rounded hover:bg-gray-700 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 ml-2">Copy</button>` : ''}
+        return `<div class="mb-3 flex items-center justify-between glass-card p-3 rounded group">
+            <div class="min-w-0"><div class="text-xs text-slate-400 mb-0.5">${label}</div>${display}</div>
+            ${copyVal ? `<button onclick="copyText('${esc(copyVal).replace(/'/g, "\\'")}')" class="text-xs px-2 py-1 glass rounded hover:bg-gray-700 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 ml-2">Copy</button>` : ''}
         </div>`;
     }
 
@@ -412,27 +440,28 @@
     }
     window.toggleFav = toggleFav;
 
+    let totpRemaining = 30;
+
     async function refreshTotp(id) {
         const res = await api.get(`/api/entries/${id}/totp`);
         if (res.ok) {
             document.getElementById('totp-code').textContent = res.data.code;
-            const remaining = parseInt(res.data.remaining);
-            document.getElementById('totp-remaining').textContent = `${remaining}s`;
-            document.getElementById('totp-bar').style.width = `${(remaining / 30) * 100}%`;
+            totpRemaining = parseInt(res.data.remaining);
+            document.getElementById('totp-remaining').textContent = `${totpRemaining}s`;
+            document.getElementById('totp-bar').style.width = `${(totpRemaining / 30) * 100}%`;
         }
     }
 
     function startTotpTimer(id) {
         clearInterval(totpInterval);
-        let remaining = 30;
         refreshTotp(id);
         totpInterval = setInterval(() => {
-            remaining--;
-            if (remaining <= 0) { remaining = 30; refreshTotp(id); }
+            totpRemaining--;
+            if (totpRemaining <= 0) { refreshTotp(id); }
             const bar = document.getElementById('totp-bar');
             const rem = document.getElementById('totp-remaining');
-            if (bar) bar.style.width = `${(remaining / 30) * 100}%`;
-            if (rem) rem.textContent = `${remaining}s`;
+            if (bar) bar.style.width = `${(totpRemaining / 30) * 100}%`;
+            if (rem) rem.textContent = `${totpRemaining}s`;
         }, 1000);
     }
 
@@ -445,7 +474,7 @@
         const res = await api.get(`/api/entries/${id}`);
         if (!res.ok) return;
         const e = res.data;
-        document.getElementById('modal-entry-title').textContent = 'Edit Entry';
+        document.getElementById('modal-entry-title').innerHTML = '<i data-lucide="edit-2" class="w-5 h-5 text-amber-500 inline mr-2"></i>Edit Entry'; lucide.createIcons();
         document.getElementById('entry-id').value = e.id;
         document.getElementById('entry-type').value = e.entry_type;
         document.getElementById('entry-title').value = e.title;
@@ -462,13 +491,21 @@
         if (!confirm('Delete this entry?')) return;
         await api.del(`/api/entries/${id}`);
         selectedId = null;
-        document.getElementById('content-area').innerHTML = '<div class="text-center text-gray-500 mt-20"><p class="text-4xl mb-4">🔒</p><p>Select an entry</p></div>';
+        document.getElementById('content-area').innerHTML = '<div class="text-center text-slate-400 mt-20"><div class="flex justify-center mb-4 text-slate-600"><i data-lucide="lock" class="w-16 h-16 opacity-50"></i></div><p>Select an entry</p></div>';
         await loadEntries();
     };
 
+    
     function updateEntryTypeFields() {
-        document.getElementById('login-fields').classList.toggle('hidden', document.getElementById('entry-type').value === 'note');
+        const type = document.getElementById('entry-type').value;
+        const loginFields = document.getElementById('login-fields');
+        if (type === 'note' || type === 'authenticator') {
+            loginFields.style.display = 'none';
+        } else {
+            loginFields.style.display = 'block';
+        }
     }
+
 
     // ── Init ───────────────────────────────────────────────────────
     // Auth forms
@@ -516,14 +553,15 @@
     };
     document.getElementById('btn-info').onclick = async () => {
         const res = await api.get('/api/status');
+        lucide.createIcons();
         if (!res.ok) return;
         const d = res.data;
         document.getElementById('info-content').innerHTML = `
-            <div class="flex justify-between"><span class="text-gray-500">Path</span><span class="font-mono text-xs">${esc(d.vault_path)}</span></div>
-            <div class="flex justify-between"><span class="text-gray-500">Entries</span><span>${d.entry_count}</span></div>
-            <div class="flex justify-between"><span class="text-gray-500">Format</span><span>.emberkeys (EMBK v1)</span></div>
-            <div class="flex justify-between"><span class="text-gray-500">Cipher</span><span>AES-256-GCM</span></div>
-            <div class="flex justify-between"><span class="text-gray-500">KDF</span><span>Argon2id (64MB)</span></div>`;
+            <div class="flex justify-between"><span class="text-slate-400">Path</span><span class="font-mono text-xs">${esc(d.vault_path)}</span></div>
+            <div class="flex justify-between"><span class="text-slate-400">Entries</span><span>${d.entry_count}</span></div>
+            <div class="flex justify-between"><span class="text-slate-400">Format</span><span>.emberkeys (EMBK v1)</span></div>
+            <div class="flex justify-between"><span class="text-slate-400">Cipher</span><span>AES-256-GCM</span></div>
+            <div class="flex justify-between"><span class="text-slate-400">KDF</span><span>Argon2id (64MB)</span></div>`;
         showModal('modal-info');
     };
 
@@ -533,8 +571,8 @@
     // Filter tabs
     document.querySelectorAll('.filter-tab').forEach(tab => {
         tab.onclick = () => {
-            document.querySelectorAll('.filter-tab').forEach(t => { t.className = 'filter-tab flex-1 py-1.5 text-gray-500 hover:text-gray-300'; });
-            tab.className = 'filter-tab flex-1 py-1.5 text-amber-400 border-b-2 border-amber-400';
+            document.querySelectorAll('.filter-tab').forEach(t => { t.className = 'filter-tab flex-1 py-1.5 text-slate-400 hover:text-gray-300'; });
+            tab.className = 'filter-tab flex-1 py-1.5 text-amber-400 drop-shadow-md border-b-2 border-amber-400';
             activeFilter = tab.dataset.filter;
             activeTag = null;
             renderList(document.getElementById('search-input').value);
@@ -543,16 +581,34 @@
     });
 
     // Add entry
+    
     document.getElementById('btn-add').onclick = () => {
-        document.getElementById('modal-entry-title').textContent = 'New Entry';
+        document.getElementById('modal-entry-title').innerHTML = '<i data-lucide="file-plus" class="w-5 h-5 text-amber-500 inline mr-2"></i>New Entry';
         document.getElementById('entry-id').value = '';
         document.getElementById('entry-form').reset();
-        document.getElementById('entry-type').value = 'login';
+        document.getElementById('entry-type').value = activeTab === 'authenticator' ? 'authenticator' : 'login';
         updateEntryTypeFields();
         showModal('modal-entry');
         document.getElementById('entry-title').focus();
+        lucide.createIcons();
     };
+
     document.getElementById('entry-type').onchange = updateEntryTypeFields;
+
+    document.getElementById('tab-vault').onclick = () => {
+        activeTab = 'vault';
+        document.getElementById('tab-vault').className = "flex-1 py-2 text-amber-400 drop-shadow-md border-b-2 border-amber-400 glass-card/50 transition-all";
+        document.getElementById('tab-authenticator').className = "flex-1 py-2 text-slate-400 hover:text-gray-300 hover:glass/50 transition-all";
+        renderList(document.getElementById('search-input').value);
+    };
+
+    document.getElementById('tab-authenticator').onclick = () => {
+        activeTab = 'authenticator';
+        document.getElementById('tab-authenticator').className = "flex-1 py-2 text-amber-400 drop-shadow-md border-b-2 border-amber-400 glass-card/50 transition-all";
+        document.getElementById('tab-vault').className = "flex-1 py-2 text-slate-400 hover:text-gray-300 hover:glass/50 transition-all";
+        renderList(document.getElementById('search-input').value);
+    };
+
     document.getElementById('entry-cancel').onclick = () => hideModal('modal-entry');
     document.getElementById('entry-modal-close').onclick = () => hideModal('modal-entry');
 
@@ -576,8 +632,11 @@
         if (id) selectEntry(id);
     };
 
-    // Generate password button in entry form → opens generator targeting password field
-    document.getElementById('entry-gen-pw').onclick = () => { genTargetField = 'entry-password'; openGenerator(); };
+    // Generate password button in entry form → automatically fills password field
+    document.getElementById('entry-gen-pw').onclick = async () => { 
+        const res = await api.post('/api/generate', { passphrase: false, length: 20 });
+        if (res.ok) document.getElementById('entry-password').value = res.data.password;
+    };
     document.getElementById('entry-copy-pw').onclick = () => { copyText(document.getElementById('entry-password').value); };
 
     // Generator
@@ -590,7 +649,7 @@
         else { useBtn.classList.add('hidden'); }
         showModal('modal-generate');
     }
-    document.getElementById('btn-generate')?.onclick = openGenerator;
+    const btnGen = document.getElementById('btn-generate'); if(btnGen) btnGen.onclick = openGenerator;
 
     document.getElementById('gen-type-password').onclick = () => { genType = 'password'; updateGenType(); generatePassword(); };
     document.getElementById('gen-type-passphrase').onclick = () => { genType = 'passphrase'; updateGenType(); generatePassword(); };
@@ -607,8 +666,8 @@
     };
 
     function updateGenType() {
-        document.getElementById('gen-type-password').className = `flex-1 py-1.5 rounded text-sm ${genType === 'password' ? 'bg-amber-600' : 'bg-gray-800'}`;
-        document.getElementById('gen-type-passphrase').className = `flex-1 py-1.5 rounded text-sm ${genType === 'passphrase' ? 'bg-amber-600' : 'bg-gray-800'}`;
+        document.getElementById('gen-type-password').className = `flex-1 py-1.5 rounded text-sm ${genType === 'password' ? 'bg-amber-600' : 'glass'}`;
+        document.getElementById('gen-type-passphrase').className = `flex-1 py-1.5 rounded text-sm ${genType === 'passphrase' ? 'bg-amber-600' : 'glass'}`;
         document.getElementById('gen-password-opts').classList.toggle('hidden', genType !== 'password');
         document.getElementById('gen-passphrase-opts').classList.toggle('hidden', genType !== 'passphrase');
     }
@@ -675,6 +734,7 @@
     // Check vault status on load
     (async () => {
         const res = await api.get('/api/status');
+        lucide.createIcons();
         if (res.ok) {
             if (!res.data.vault_exists) {
                 document.getElementById('unlock-form').classList.add('hidden');
