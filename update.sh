@@ -50,29 +50,22 @@ if [ ! -f "$CLI_BINARY" ]; then
     exit 1
 fi
 
-# Rename running binaries first, then copy new ones
+# Always rename-then-replace to avoid "text file busy" on the running binary
 for bin in coalbox coalbox-web; do
     target="${INSTALL_DIR}/${bin}"
     new="target/release/${bin}"
-    if [ -f "$new" ]; then
-        if [ -f "$target" ]; then
-            if [ -w "$INSTALL_DIR" ]; then
-                mv "$target" "${target}.old" 2>/dev/null || sudo mv "$target" "${target}.old"
-                cp "$new" "$target"
-                rm -f "${target}.old"
-            else
-                sudo mv "$target" "${target}.old" 2>/dev/null || true
-                sudo cp "$new" "$target"
-                sudo rm -f "${target}.old"
-            fi
-        else
-            if [ -w "$INSTALL_DIR" ]; then
-                cp "$new" "$target"
-            else
-                sudo cp "$new" "$target"
-            fi
-        fi
-        chmod +x "$target" 2>/dev/null || sudo chmod +x "$target"
+    [ -f "$new" ] || continue
+
+    if [ -w "$INSTALL_DIR" ]; then
+        [ -f "$target" ] && mv "$target" "${target}.old"
+        cp "$new" "$target"
+        chmod +x "$target"
+        rm -f "${target}.old"
+    else
+        [ -f "$target" ] && sudo mv "$target" "${target}.old"
+        sudo cp "$new" "$target"
+        sudo chmod +x "$target"
+        sudo rm -f "${target}.old"
     fi
 done
 
