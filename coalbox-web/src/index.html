@@ -1,30 +1,83 @@
 <!DOCTYPE html>
 <html lang="en" class="h-full text-slate-100 antialiased">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Coalbox</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    
+
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; background: #27272a; }
-        .glass { background: #3f3f46; border: 1px solid #52525b; }
-        .glass-card { background: #18181b; border: 1px solid #3f3f46; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5); }
-        .glass-input { background: #27272a; border: 1px solid #52525b; transition: all 0.2s ease; }
-        .glass-input option { background: #27272a; color: #f1f5f9; }
-        .glass-input:focus { border-color: #fbbf24; box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.2); outline: none; }
-        .btn-primary { background: linear-gradient(to right, #d97706, #b45309); box-shadow: 0 4px 14px 0 rgba(217, 119, 6, 0.39); transition: all 0.2s ease; }
-        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(217, 119, 6, 0.4); }
-        [x-cloak] { display: none !important; }
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.2); }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #27272a;
+        }
+
+        .glass {
+            background: #3f3f46;
+            border: 1px solid #52525b;
+        }
+
+        .glass-card {
+            background: #18181b;
+            border: 1px solid #3f3f46;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        }
+
+        .glass-input {
+            background: #27272a;
+            border: 1px solid #52525b;
+            transition: all 0.2s ease;
+        }
+
+        .glass-input option {
+            background: #27272a;
+            color: #f1f5f9;
+        }
+
+        .glass-input:focus {
+            border-color: #fbbf24;
+            box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.2);
+            outline: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(to right, #d97706, #b45309);
+            box-shadow: 0 4px 14px 0 rgba(217, 119, 6, 0.39);
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(217, 119, 6, 0.4);
+        }
+
+        [x-cloak] {
+            display: none !important;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
     </style>
 
 </head>
+
 <body class="h-full">
     <div id="app" class="h-full flex flex-col">
 
@@ -39,42 +92,28 @@
                 <!-- Unlock form -->
                 <form id="unlock-form" class="space-y-4">
                     <p id="unlock-subtitle" class="text-center text-sm text-slate-300">Unlock your vault</p>
-                    <input
-                        type="password"
-                        id="unlock-password"
-                        placeholder="Master password"
+                    <input type="password" id="unlock-password" placeholder="Master password"
                         class="w-full px-4 py-3 glass-card rounded-lg focus:outline-none focus:border-amber-500 text-gray-100 placeholder-gray-500"
-                        autofocus
-                    >
-                    <button
-                        type="submit"
-                        class="w-full py-3 btn-primary rounded-lg font-medium transition-colors"
-                    >Unlock</button>
+                        autofocus>
+                    <button type="submit"
+                        class="w-full py-3 btn-primary rounded-lg font-medium transition-colors">Unlock</button>
                     <p id="unlock-error" class="text-red-400 text-sm text-center hidden"></p>
-                    <p class="text-center text-xs text-gray-600">No vault? <button type="button" id="show-create" class="text-amber-500 hover:underline">Create one</button></p>
+                    <p class="text-center text-xs text-gray-600">No vault? <button type="button" id="show-create"
+                            class="text-amber-500 hover:underline">Create one</button></p>
                 </form>
 
                 <!-- Create vault form -->
                 <form id="create-form" class="space-y-4 hidden">
                     <p class="text-center text-sm text-slate-300">Create a new vault</p>
-                    <input
-                        type="password"
-                        id="create-password"
-                        placeholder="Master password (min 8 chars)"
-                        class="w-full px-4 py-3 glass-card rounded-lg focus:outline-none focus:border-amber-500 text-gray-100 placeholder-gray-500"
-                    >
-                    <input
-                        type="password"
-                        id="create-confirm"
-                        placeholder="Confirm password"
-                        class="w-full px-4 py-3 glass-card rounded-lg focus:outline-none focus:border-amber-500 text-gray-100 placeholder-gray-500"
-                    >
-                    <button
-                        type="submit"
-                        class="w-full py-3 btn-primary rounded-lg font-medium transition-colors"
-                    >Create Vault</button>
+                    <input type="password" id="create-password" placeholder="Master password (min 8 chars)"
+                        class="w-full px-4 py-3 glass-card rounded-lg focus:outline-none focus:border-amber-500 text-gray-100 placeholder-gray-500">
+                    <input type="password" id="create-confirm" placeholder="Confirm password"
+                        class="w-full px-4 py-3 glass-card rounded-lg focus:outline-none focus:border-amber-500 text-gray-100 placeholder-gray-500">
+                    <button type="submit"
+                        class="w-full py-3 btn-primary rounded-lg font-medium transition-colors">Create Vault</button>
                     <p id="create-error" class="text-red-400 text-sm text-center hidden"></p>
-                    <p class="text-center text-xs text-gray-600">Have a vault? <button type="button" id="show-unlock" class="text-amber-500 hover:underline">Unlock it</button></p>
+                    <p class="text-center text-xs text-gray-600">Have a vault? <button type="button" id="show-unlock"
+                            class="text-amber-500 hover:underline">Unlock it</button></p>
                 </form>
             </div>
         </div>
@@ -87,12 +126,19 @@
                 <h1 class="text-lg font-bold text-amber-400 drop-shadow-md">Coalbox</h1>
                 <div class="flex items-center gap-2">
                     <span id="entry-count" class="text-xs text-slate-400"></span>
-                    <button id="btn-generate" class="text-xs px-2 py-1 glass hover:bg-gray-700 rounded" title="Generate password"><i data-lucide="wand-2" class="w-4 h-4"></i></button>
-                    <button id="btn-import" class="text-xs px-2 py-1 glass hover:bg-gray-700 rounded" title="Import"><i data-lucide="download" class="w-4 h-4"></i></button>
-                    <button id="btn-migrate" class="text-xs px-2 py-1 glass hover:bg-gray-700 rounded" title="Migrate"><i data-lucide="arrow-right-left" class="w-4 h-4"></i></button>
-                    <button id="btn-info" class="text-xs px-2 py-1 glass hover:bg-gray-700 rounded" title="Vault info"><i data-lucide="info" class="w-4 h-4"></i></button>
-                    <button id="btn-update" class="text-xs px-2 py-1 glass hover:bg-gray-700 rounded hidden" title="Update available"><i data-lucide="arrow-up-circle" class="w-4 h-4 text-green-400"></i></button>
-                    <button id="btn-lock" class="text-xs px-2 py-1 glass hover:bg-gray-700 rounded text-red-400" title="Lock vault"><i data-lucide="lock" class="w-4 h-4"></i></button>
+                    <button id="btn-generate" class="text-xs px-2 py-1 glass hover:bg-gray-700 rounded"
+                        title="Generate password"><i data-lucide="wand-2" class="w-4 h-4"></i></button>
+                    <button id="btn-import" class="text-xs px-2 py-1 glass hover:bg-gray-700 rounded" title="Import"><i
+                            data-lucide="download" class="w-4 h-4"></i></button>
+                    <button id="btn-migrate" class="text-xs px-2 py-1 glass hover:bg-gray-700 rounded"
+                        title="Migrate"><i data-lucide="arrow-right-left" class="w-4 h-4"></i></button>
+                    <button id="btn-info" class="text-xs px-2 py-1 glass hover:bg-gray-700 rounded"
+                        title="Vault info"><i data-lucide="info" class="w-4 h-4"></i></button>
+                    <button id="btn-update" class="text-xs px-2 py-1 glass hover:bg-gray-700 rounded hidden"
+                        title="Update available"><i data-lucide="arrow-up-circle"
+                            class="w-4 h-4 text-green-400"></i></button>
+                    <button id="btn-lock" class="text-xs px-2 py-1 glass hover:bg-gray-700 rounded text-red-400"
+                        title="Lock vault"><i data-lucide="lock" class="w-4 h-4"></i></button>
                 </div>
             </header>
 
@@ -103,42 +149,56 @@
                     <!-- Search -->
                     <div class="p-2 border-b border-gray-800">
                         <div class="relative">
-                            <input type="text" id="search-input" placeholder="Search... (Ctrl+K)" class="w-full px-3 py-1.5 glass-card rounded text-sm focus:outline-none focus:border-amber-500 pr-8">
+                            <input type="text" id="search-input" placeholder="Search... (Ctrl+K)"
+                                class="w-full px-3 py-1.5 glass-card rounded text-sm focus:outline-none focus:border-amber-500 pr-8">
                             <span class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-600 text-xs">⌘K</span>
                         </div>
                     </div>
 
-                    
+
                     <!-- Filter tabs -->
                     <div class="flex border-b border-gray-800 text-xs">
-                        <button class="filter-tab flex-1 py-2 text-slate-300 hover:text-amber-400 drop-shadow-md border-b-2 border-transparent transition-colors" data-filter="all">All</button>
-                        <button class="filter-tab flex-1 py-2 text-slate-300 hover:text-amber-400 drop-shadow-md border-b-2 border-transparent transition-colors" data-filter="favourites"><i data-lucide="star" class="w-4 h-4 inline-block mr-1"></i>Favs</button>
-                        <button class="filter-tab flex-1 py-2 text-slate-300 hover:text-amber-400 drop-shadow-md border-b-2 border-transparent transition-colors" data-filter="logins">Logins</button>
+                        <button
+                            class="filter-tab flex-1 py-2 text-slate-300 hover:text-amber-400 drop-shadow-md border-b-2 border-transparent transition-colors"
+                            data-filter="all">All</button>
+                        <button
+                            class="filter-tab flex-1 py-2 text-slate-300 hover:text-amber-400 drop-shadow-md border-b-2 border-transparent transition-colors"
+                            data-filter="favourites"><i data-lucide="star"
+                                class="w-4 h-4 inline-block mr-1"></i>Favs</button>
+                        <button
+                            class="filter-tab flex-1 py-2 text-slate-300 hover:text-amber-400 drop-shadow-md border-b-2 border-transparent transition-colors"
+                            data-filter="logins">Logins</button>
                     </div>
                     <div class="flex border-b border-gray-800 text-sm font-medium">
-                        <button id="tab-vault" class="flex-1 py-2 text-amber-400 drop-shadow-md border-b-2 border-amber-400 glass-card/50">Vault</button>
-                        <button id="tab-authenticator" class="flex-1 py-2 text-slate-400 hover:text-gray-300 hover:glass/50">Authenticator</button>
+                        <button id="tab-vault"
+                            class="flex-1 py-2 text-amber-400 drop-shadow-md border-b-2 border-amber-400 glass-card/50">Vault</button>
+                        <button id="tab-authenticator"
+                            class="flex-1 py-2 text-slate-400 hover:text-gray-300 hover:glass/50">Authenticator</button>
                     </div>
 
 
                     <!-- Tags -->
-                    <div id="tags-bar" class="flex gap-1 px-2 py-1.5 border-b border-gray-800 overflow-x-auto hidden"></div>
+                    <div id="tags-bar" class="flex gap-1 px-2 py-1.5 border-b border-gray-800 overflow-x-auto hidden">
+                    </div>
 
                     <!-- Entry list -->
                     <div id="entry-list" class="flex-1 overflow-y-auto p-1.5 space-y-0.5"></div>
 
                     <!-- Add button -->
                     <div class="p-2 border-t border-gray-800">
-                        <button id="btn-add" class="w-full py-1.5 btn-primary rounded text-sm font-medium">+ New Entry <span class="text-xs opacity-60 ml-1">Ctrl+N</span></button>
+                        <button id="btn-add" class="w-full py-1.5 btn-primary rounded text-sm font-medium">+ New Entry
+                            <span class="text-xs opacity-60 ml-1">Ctrl+N</span></button>
                     </div>
                 </aside>
 
                 <!-- Content -->
                 <main class="flex-1 overflow-y-auto p-6" id="content-area">
                     <div class="text-center text-slate-400 mt-20">
-                        <div class="flex justify-center mb-4 text-slate-600"><i data-lucide="lock" class="w-16 h-16 opacity-50"></i></div>
+                        <div class="flex justify-center mb-4 text-slate-600"><i data-lucide="lock"
+                                class="w-16 h-16 opacity-50"></i></div>
                         <p class="text-lg">Select an entry</p>
-                        <p class="text-sm mt-1">or press <kbd class="px-1.5 py-0.5 glass rounded text-xs">Ctrl+N</kbd> to create one</p>
+                        <p class="text-sm mt-1">or press <kbd class="px-1.5 py-0.5 glass rounded text-xs">Ctrl+N</kbd>
+                            to create one</p>
                     </div>
                 </main>
             </div>
@@ -150,23 +210,27 @@
                 <h2 class="text-lg font-bold mb-4">Password Generator</h2>
                 <div class="space-y-3">
                     <div class="flex gap-2">
-                        <button id="gen-type-password" class="flex-1 py-1.5 bg-amber-600 rounded text-sm">Password</button>
+                        <button id="gen-type-password"
+                            class="flex-1 py-1.5 bg-amber-600 rounded text-sm">Password</button>
                         <button id="gen-type-passphrase" class="flex-1 py-1.5 glass rounded text-sm">Passphrase</button>
                     </div>
                     <div id="gen-password-opts" class="space-y-2">
                         <label class="flex items-center gap-2 text-sm">
                             <span class="w-16">Length:</span>
-                            <input type="number" id="gen-length" value="20" min="8" max="128" class="w-20 px-2 py-1 glass-input rounded text-sm">
+                            <input type="number" id="gen-length" value="20" min="8" max="128"
+                                class="w-20 px-2 py-1 glass-input rounded text-sm">
                         </label>
                     </div>
                     <div id="gen-passphrase-opts" class="space-y-2 hidden">
                         <label class="flex items-center gap-2 text-sm">
                             <span class="w-16">Words:</span>
-                            <input type="number" id="gen-words" value="6" min="3" max="12" class="w-20 px-2 py-1 glass-input rounded text-sm">
+                            <input type="number" id="gen-words" value="6" min="3" max="12"
+                                class="w-20 px-2 py-1 glass-input rounded text-sm">
                         </label>
                         <label class="flex items-center gap-2 text-sm">
                             <span class="w-16">Separator:</span>
-                            <input type="text" id="gen-separator" value=" " class="w-20 px-2 py-1 glass-input rounded text-sm">
+                            <input type="text" id="gen-separator" value=" "
+                                class="w-20 px-2 py-1 glass-input rounded text-sm">
                         </label>
                         <label class="flex items-center gap-2 text-sm">
                             <input type="checkbox" id="gen-capitalize" checked> Capitalize
@@ -177,12 +241,15 @@
                     </div>
                     <div class="glass p-3 rounded font-mono text-sm break-all select-all" id="gen-result">—</div>
                     <div class="flex gap-2">
-                        <button id="gen-refresh" class="flex-1 py-2 glass hover:bg-gray-700 rounded text-sm">Regenerate</button>
-                        <button id="gen-copy" class="flex-1 py-2 bg-gray-700 hover:bg-gray-600 rounded text-sm">Copy</button>
+                        <button id="gen-refresh"
+                            class="flex-1 py-2 glass hover:bg-gray-700 rounded text-sm">Regenerate</button>
+                        <button id="gen-copy"
+                            class="flex-1 py-2 bg-gray-700 hover:bg-gray-600 rounded text-sm">Copy</button>
                         <button id="gen-use" class="flex-1 py-2 btn-primary rounded text-sm hidden">Use</button>
                     </div>
                 </div>
-                <button id="gen-close" class="absolute top-3 right-3 text-slate-400 hover:text-gray-300 text-xl">&times;</button>
+                <button id="gen-close"
+                    class="absolute top-3 right-3 text-slate-400 hover:text-gray-300 text-xl">&times;</button>
             </div>
         </div>
 
@@ -197,26 +264,38 @@
                         <option value="note">Secure Note</option>
                         <option value="authenticator">Authenticator Only (TOTP)</option>
                     </select>
-                    <input type="text" id="entry-title" placeholder="Title" class="w-full px-3 py-2 glass-input rounded text-sm" required>
+                    <input type="text" id="entry-title" placeholder="Title"
+                        class="w-full px-3 py-2 glass-input rounded text-sm" required>
                     <div id="login-fields">
-                        <input type="text" id="entry-username" placeholder="Username" class="w-full px-3 py-2 glass-input rounded text-sm mb-2">
+                        <input type="text" id="entry-username" placeholder="Username"
+                            class="w-full px-3 py-2 glass-input rounded text-sm mb-2">
                         <div class="flex gap-1 mb-2">
-                            <input type="text" id="entry-password" placeholder="Password" class="flex-1 px-3 py-2 glass-input rounded text-sm">
-                            <button type="button" id="entry-gen-pw" class="px-3 py-2 glass hover:bg-gray-700 rounded text-sm flex items-center justify-center" title="Generate password"><i data-lucide="wand-2" class="w-4 h-4"></i></button>
-                            <button type="button" id="entry-copy-pw" class="px-3 py-2 glass hover:bg-gray-700 rounded text-sm flex items-center justify-center" title="Copy password"><i data-lucide="copy" class="w-4 h-4"></i></button>
+                            <input type="text" id="entry-password" placeholder="Password"
+                                class="flex-1 px-3 py-2 glass-input rounded text-sm">
+                            <button type="button" id="entry-gen-pw"
+                                class="px-3 py-2 glass hover:bg-gray-700 rounded text-sm flex items-center justify-center"
+                                title="Generate password"><i data-lucide="wand-2" class="w-4 h-4"></i></button>
+                            <button type="button" id="entry-copy-pw"
+                                class="px-3 py-2 glass hover:bg-gray-700 rounded text-sm flex items-center justify-center"
+                                title="Copy password"><i data-lucide="copy" class="w-4 h-4"></i></button>
                         </div>
-                        <input type="text" id="entry-url" placeholder="URL" class="w-full px-3 py-2 glass-input rounded text-sm mb-2">
+                        <input type="text" id="entry-url" placeholder="URL"
+                            class="w-full px-3 py-2 glass-input rounded text-sm mb-2">
                     </div>
                     <div id="totp-field">
-                        <input type="text" id="entry-totp" placeholder="TOTP secret (base32)" class="w-full px-3 py-2 glass-input rounded text-sm mb-2">
+                        <input type="text" id="entry-totp" placeholder="TOTP secret (base32)"
+                            class="w-full px-3 py-2 glass-input rounded text-sm mb-2">
                     </div>
-                    <textarea id="entry-notes" placeholder="Notes" rows="3" class="w-full px-3 py-2 glass-input rounded text-sm"></textarea>
+                    <textarea id="entry-notes" placeholder="Notes" rows="3"
+                        class="w-full px-3 py-2 glass-input rounded text-sm"></textarea>
                     <div class="flex gap-2 pt-1">
                         <button type="submit" class="flex-1 py-2 btn-primary rounded text-sm font-medium">Save</button>
-                        <button type="button" id="entry-cancel" class="flex-1 py-2 glass hover:bg-gray-700 rounded text-sm">Cancel</button>
+                        <button type="button" id="entry-cancel"
+                            class="flex-1 py-2 glass hover:bg-gray-700 rounded text-sm">Cancel</button>
                     </div>
                 </form>
-                <button id="entry-modal-close" class="absolute top-3 right-3 text-slate-400 hover:text-gray-300 text-xl">&times;</button>
+                <button id="entry-modal-close"
+                    class="absolute top-3 right-3 text-slate-400 hover:text-gray-300 text-xl">&times;</button>
             </div>
         </div>
 
@@ -226,9 +305,12 @@
                 <h2 class="text-lg font-bold mb-4">Vault Info</h2>
                 <div id="info-content" class="space-y-2 text-sm"></div>
                 <div class="mt-4 pt-4 border-t border-gray-800">
-                    <button id="btn-destroy-vault" class="w-full py-2 bg-red-900/50 hover:bg-red-800/50 text-red-400 rounded text-sm font-medium">Delete Vault</button>
+                    <button id="btn-destroy-vault"
+                        class="w-full py-2 bg-red-900/50 hover:bg-red-800/50 text-red-400 rounded text-sm font-medium">Delete
+                        Vault</button>
                 </div>
-                <button onclick="hideModal('modal-info')" class="absolute top-3 right-3 text-slate-400 hover:text-gray-300 text-xl">&times;</button>
+                <button onclick="hideModal('modal-info')"
+                    class="absolute top-3 right-3 text-slate-400 hover:text-gray-300 text-xl">&times;</button>
             </div>
         </div>
 
@@ -237,7 +319,8 @@
             <div class="glass-card rounded-xl w-full max-w-md p-6 relative">
                 <h2 class="text-lg font-bold mb-4">Import Entries</h2>
                 <div class="space-y-3">
-                    <input type="file" id="import-file" accept=".csv,.json,.xml,.1pux" class="w-full text-sm text-slate-300 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:bg-amber-600 file:text-white hover:file:bg-amber-500">
+                    <input type="file" id="import-file" accept=".csv,.json,.xml,.1pux"
+                        class="w-full text-sm text-slate-300 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:bg-amber-600 file:text-white hover:file:bg-amber-500">
                     <select id="import-format" class="w-full px-3 py-2 glass-input rounded text-sm">
                         <option value="auto">Auto-detect</option>
                         <option value="csv">CSV</option>
@@ -246,9 +329,11 @@
                         <option value="1password">1Password 1PUX</option>
                     </select>
                     <div id="import-result" class="text-sm hidden"></div>
-                    <button id="import-submit" class="w-full py-2 btn-primary rounded text-sm font-medium">Import</button>
+                    <button id="import-submit"
+                        class="w-full py-2 btn-primary rounded text-sm font-medium">Import</button>
                 </div>
-                <button onclick="hideModal('modal-import')" class="absolute top-3 right-3 text-slate-400 hover:text-gray-300 text-xl">&times;</button>
+                <button onclick="hideModal('modal-import')"
+                    class="absolute top-3 right-3 text-slate-400 hover:text-gray-300 text-xl">&times;</button>
             </div>
         </div>
 
@@ -257,177 +342,182 @@
             <div class="glass-card rounded-xl w-full max-w-md p-6 relative">
                 <h2 class="text-lg font-bold mb-4">Migrate Vault</h2>
                 <div class="space-y-3">
-                    <p class="text-sm text-slate-400">Export your vault to an encrypted format. Decrypted data is never written to disk.</p>
+                    <p class="text-sm text-slate-400">Export your vault to an encrypted format. Decrypted data is never
+                        written to disk.</p>
                     <div>
                         <label class="text-sm text-slate-400 block mb-1">Target format</label>
                         <select id="migrate-target" class="w-full px-3 py-2 glass-input rounded text-sm">
-                            <option value="kdbx">KDBX (KeePass)</option>
+                            <option value="kdbx">KDBX (KeePass and most managers)</option>
                             <option value="bitwarden">Bitwarden Encrypted</option>
                         </select>
                     </div>
                     <div>
                         <label class="text-sm text-slate-400 block mb-1">Export password</label>
-                        <input type="password" id="migrate-password" placeholder="Enter export password" class="w-full px-3 py-2 glass-input rounded text-sm">
+                        <input type="password" id="migrate-password" placeholder="Enter export password"
+                            class="w-full px-3 py-2 glass-input rounded text-sm">
                     </div>
                     <div>
                         <label class="text-sm text-slate-400 block mb-1">Confirm export password</label>
-                        <input type="password" id="migrate-password-confirm" placeholder="Confirm password" class="w-full px-3 py-2 glass-input rounded text-sm">
+                        <input type="password" id="migrate-password-confirm" placeholder="Confirm password"
+                            class="w-full px-3 py-2 glass-input rounded text-sm">
                     </div>
                     <div id="migrate-result" class="text-sm hidden"></div>
-                    <button id="migrate-submit" class="w-full py-2 btn-primary rounded text-sm font-medium">Migrate</button>
+                    <button id="migrate-submit"
+                        class="w-full py-2 btn-primary rounded text-sm font-medium">Migrate</button>
                 </div>
-                <button onclick="hideModal('modal-migrate')" class="absolute top-3 right-3 text-slate-400 hover:text-gray-300 text-xl">&times;</button>
+                <button onclick="hideModal('modal-migrate')"
+                    class="absolute top-3 right-3 text-slate-400 hover:text-gray-300 text-xl">&times;</button>
             </div>
         </div>
     </div>
 
     <script>
-    // ── State ──────────────────────────────────────────────────────
-    let entries = [];
-    let selectedId = null;
-    let activeFilter = 'all';
-    let activeTag = null;
-    let activeTab = 'vault';
-    let ws = null;
-    let genType = 'password';
-    let genTargetField = null;
-    let totpInterval = null;
-    let clipboardTimer = null;
+        // ── State ──────────────────────────────────────────────────────
+        let entries = [];
+        let selectedId = null;
+        let activeFilter = 'all';
+        let activeTag = null;
+        let activeTab = 'vault';
+        let ws = null;
+        let genType = 'password';
+        let genTargetField = null;
+        let totpInterval = null;
+        let clipboardTimer = null;
 
-    // ── API ────────────────────────────────────────────────────────
-    const api = {
-        async get(u) { return (await fetch(u)).json(); },
-        async post(u, b) { return (await fetch(u, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(b) })).json(); },
-        async put(u, b) { return (await fetch(u, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(b) })).json(); },
-        async del(u) { return (await fetch(u, { method: 'DELETE' })).json(); }
-    };
-
-    // ── Clipboard with auto-clear ──────────────────────────────────
-    async function copyText(text, autoClear = true) {
-        await navigator.clipboard.writeText(text);
-        if (autoClear) {
-            clearTimeout(clipboardTimer);
-            clipboardTimer = setTimeout(() => navigator.clipboard.writeText(''), 30000);
-        }
-    }
-
-    // ── WebSocket ──────────────────────────────────────────────────
-    function connectWs() {
-        const proto = location.protocol === 'https:' ? 'wss' : 'ws';
-        ws = new WebSocket(`${proto}://${location.host}/ws`);
-        ws.onmessage = (e) => {
-            if (e.data === 'unlock') { loadEntries(); showMain(); }
-            else if (e.data === 'lock') { showAuth(); }
-            else if (e.data === 'entries_changed') { loadEntries(); }
+        // ── API ────────────────────────────────────────────────────────
+        const api = {
+            async get(u) { return (await fetch(u)).json(); },
+            async post(u, b) { return (await fetch(u, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(b) })).json(); },
+            async put(u, b) { return (await fetch(u, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(b) })).json(); },
+            async del(u) { return (await fetch(u, { method: 'DELETE' })).json(); }
         };
-        ws.onclose = () => setTimeout(connectWs, 2000);
-    }
 
-    // ── UI state ───────────────────────────────────────────────────
-    function showAuth() {
-        document.getElementById('auth-screen').classList.remove('hidden');
-        document.getElementById('auth-screen').classList.add('flex');
-        document.getElementById('main-ui').classList.add('hidden');
-        document.getElementById('unlock-password').value = '';
-        document.getElementById('unlock-error').classList.add('hidden');
-        document.getElementById('create-form').classList.add('hidden');
-        document.getElementById('unlock-form').classList.remove('hidden');
-        entries = []; selectedId = null;
-        renderList();
-        clearInterval(totpInterval);
-    }
-
-    function showMain() {
-        document.getElementById('auth-screen').classList.add('hidden');
-        document.getElementById('auth-screen').classList.remove('flex');
-        document.getElementById('main-ui').classList.remove('hidden');
-    }
-
-    // ── Modals ─────────────────────────────────────────────────────
-    function showModal(id) { document.getElementById(id).classList.remove('hidden'); document.getElementById(id).classList.add('flex'); }
-    window.hideModal = function(id) { document.getElementById(id).classList.add('hidden'); document.getElementById(id).classList.remove('flex'); };
-
-    // ── Entries ────────────────────────────────────────────────────
-    async function loadEntries() {
-        const res = await api.get('/api/entries');
-        if (res.ok) {
-            entries = res.data;
-            document.getElementById('entry-count').textContent = `${entries.length} entries`;
-            lucide.createIcons();
-            renderTags();
-            renderList();
+        // ── Clipboard with auto-clear ──────────────────────────────────
+        async function copyText(text, autoClear = true) {
+            await navigator.clipboard.writeText(text);
+            if (autoClear) {
+                clearTimeout(clipboardTimer);
+                clipboardTimer = setTimeout(() => navigator.clipboard.writeText(''), 30000);
+            }
         }
-    }
 
-    function renderTags() {
-        const tagMap = {};
-        entries.forEach(e => (e.tags || []).forEach(t => { tagMap[t] = (tagMap[t] || 0) + 1; }));
-        const bar = document.getElementById('tags-bar');
-        const tags = Object.entries(tagMap).sort((a, b) => b[1] - a[1]);
-        if (tags.length === 0) { bar.classList.add('hidden'); return; }
-        bar.classList.remove('hidden');
-        bar.innerHTML = tags.map(([t, c]) =>
-            `<button class="tag-btn shrink-0 px-2 py-0.5 rounded text-xs ${activeTag === t ? 'bg-amber-600 text-white' : 'glass text-slate-300 hover:bg-gray-700'}" data-tag="${esc(t)}">${esc(t)} <span class="opacity-60">${c}</span></button>`
-        ).join('') + `<button class="tag-btn shrink-0 px-2 py-0.5 rounded text-xs ${activeTag === null ? 'bg-amber-600 text-white' : 'glass text-slate-300 hover:bg-gray-700'}" data-tag="">all</button>`;
-        bar.querySelectorAll('.tag-btn').forEach(b => b.onclick = () => { activeTag = b.dataset.tag || null; renderList(); renderTags(); });
-    }
+        // ── WebSocket ──────────────────────────────────────────────────
+        function connectWs() {
+            const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+            ws = new WebSocket(`${proto}://${location.host}/ws`);
+            ws.onmessage = (e) => {
+                if (e.data === 'unlock') { loadEntries(); showMain(); }
+                else if (e.data === 'lock') { showAuth(); }
+                else if (e.data === 'entries_changed') { loadEntries(); }
+            };
+            ws.onclose = () => setTimeout(connectWs, 2000);
+        }
 
-    function renderList(filter = '') {
-        const list = document.getElementById('entry-list');
-        const q = filter.toLowerCase();
-        let filtered = entries.filter(e => {
-            if (activeTab === 'authenticator' && e.entry_type !== 'authenticator') return false;
-            if (activeTab !== 'authenticator' && e.entry_type === 'authenticator') return false;
-            if (q && !e.title.toLowerCase().includes(q) && !(e.username || '').toLowerCase().includes(q) && !(e.url || '').toLowerCase().includes(q)) return false;
-            if (activeFilter === 'favourites' && !e.favourite) return false;
-            if (activeFilter === 'logins' && e.entry_type !== 'login') return false;
-            if (activeFilter === 'notes' && e.entry_type !== 'note') return false;
-            if (activeTag && !(e.tags || []).includes(activeTag)) return false;
-            return true;
-        });
+        // ── UI state ───────────────────────────────────────────────────
+        function showAuth() {
+            document.getElementById('auth-screen').classList.remove('hidden');
+            document.getElementById('auth-screen').classList.add('flex');
+            document.getElementById('main-ui').classList.add('hidden');
+            document.getElementById('unlock-password').value = '';
+            document.getElementById('unlock-error').classList.add('hidden');
+            document.getElementById('create-form').classList.add('hidden');
+            document.getElementById('unlock-form').classList.remove('hidden');
+            entries = []; selectedId = null;
+            renderList();
+            clearInterval(totpInterval);
+        }
 
-        if (filtered.length === 0 && entries.length > 0) {
-            list.innerHTML = '<div class="text-center text-gray-600 text-sm mt-8">No entries match</div>';
-        } else if (entries.length === 0) {
-            list.innerHTML = '<div class="text-center text-gray-600 text-sm mt-8">No entries yet.<br>Press <kbd class="px-1 py-0.5 glass rounded text-xs">Ctrl+N</kbd></div>';
-        } else {
-            list.innerHTML = filtered.map(e => {
-                
-                const icons = { login: 'key', note: 'file-text', card: 'credit-card', identity: 'user', authenticator: 'shield' };
-                const iconName = icons[e.entry_type] || 'key';
-                const sel = e.id === selectedId ? 'glass border-amber-500/50 shadow-[0_0_10px_rgba(251,191,36,0.15)]' : 'border-transparent hover:glass';
-                const fav = e.favourite ? '<i data-lucide="star" class="w-3.5 h-3.5 text-amber-400 ml-auto shrink-0 fill-current"></i>' : '';
-                return `<div class="entry-item flex items-center gap-2 px-3 py-2 rounded-lg border transition-all cursor-pointer ${sel} group" data-id="${e.id}">
+        function showMain() {
+            document.getElementById('auth-screen').classList.add('hidden');
+            document.getElementById('auth-screen').classList.remove('flex');
+            document.getElementById('main-ui').classList.remove('hidden');
+        }
+
+        // ── Modals ─────────────────────────────────────────────────────
+        function showModal(id) { document.getElementById(id).classList.remove('hidden'); document.getElementById(id).classList.add('flex'); }
+        window.hideModal = function (id) { document.getElementById(id).classList.add('hidden'); document.getElementById(id).classList.remove('flex'); };
+
+        // ── Entries ────────────────────────────────────────────────────
+        async function loadEntries() {
+            const res = await api.get('/api/entries');
+            if (res.ok) {
+                entries = res.data;
+                document.getElementById('entry-count').textContent = `${entries.length} entries`;
+                lucide.createIcons();
+                renderTags();
+                renderList();
+            }
+        }
+
+        function renderTags() {
+            const tagMap = {};
+            entries.forEach(e => (e.tags || []).forEach(t => { tagMap[t] = (tagMap[t] || 0) + 1; }));
+            const bar = document.getElementById('tags-bar');
+            const tags = Object.entries(tagMap).sort((a, b) => b[1] - a[1]);
+            if (tags.length === 0) { bar.classList.add('hidden'); return; }
+            bar.classList.remove('hidden');
+            bar.innerHTML = tags.map(([t, c]) =>
+                `<button class="tag-btn shrink-0 px-2 py-0.5 rounded text-xs ${activeTag === t ? 'bg-amber-600 text-white' : 'glass text-slate-300 hover:bg-gray-700'}" data-tag="${esc(t)}">${esc(t)} <span class="opacity-60">${c}</span></button>`
+            ).join('') + `<button class="tag-btn shrink-0 px-2 py-0.5 rounded text-xs ${activeTag === null ? 'bg-amber-600 text-white' : 'glass text-slate-300 hover:bg-gray-700'}" data-tag="">all</button>`;
+            bar.querySelectorAll('.tag-btn').forEach(b => b.onclick = () => { activeTag = b.dataset.tag || null; renderList(); renderTags(); });
+        }
+
+        function renderList(filter = '') {
+            const list = document.getElementById('entry-list');
+            const q = filter.toLowerCase();
+            let filtered = entries.filter(e => {
+                if (activeTab === 'authenticator' && e.entry_type !== 'authenticator') return false;
+                if (activeTab !== 'authenticator' && e.entry_type === 'authenticator') return false;
+                if (q && !e.title.toLowerCase().includes(q) && !(e.username || '').toLowerCase().includes(q) && !(e.url || '').toLowerCase().includes(q)) return false;
+                if (activeFilter === 'favourites' && !e.favourite) return false;
+                if (activeFilter === 'logins' && e.entry_type !== 'login') return false;
+                if (activeFilter === 'notes' && e.entry_type !== 'note') return false;
+                if (activeTag && !(e.tags || []).includes(activeTag)) return false;
+                return true;
+            });
+
+            if (filtered.length === 0 && entries.length > 0) {
+                list.innerHTML = '<div class="text-center text-gray-600 text-sm mt-8">No entries match</div>';
+            } else if (entries.length === 0) {
+                list.innerHTML = '<div class="text-center text-gray-600 text-sm mt-8">No entries yet.<br>Press <kbd class="px-1 py-0.5 glass rounded text-xs">Ctrl+N</kbd></div>';
+            } else {
+                list.innerHTML = filtered.map(e => {
+
+                    const icons = { login: 'key', note: 'file-text', card: 'credit-card', identity: 'user', authenticator: 'shield' };
+                    const iconName = icons[e.entry_type] || 'key';
+                    const sel = e.id === selectedId ? 'glass border-amber-500/50 shadow-[0_0_10px_rgba(251,191,36,0.15)]' : 'border-transparent hover:glass';
+                    const fav = e.favourite ? '<i data-lucide="star" class="w-3.5 h-3.5 text-amber-400 ml-auto shrink-0 fill-current"></i>' : '';
+                    return `<div class="entry-item flex items-center gap-2 px-3 py-2 rounded-lg border transition-all cursor-pointer ${sel} group" data-id="${e.id}">
                     <i data-lucide="${iconName}" class="w-4 h-4 text-slate-400 group-hover:text-amber-400 transition-colors"></i>
 
                     <span class="text-sm truncate flex-1">${esc(e.title)}</span>
                     ${fav}
                 </div>`;
-            }).join('');
-            list.querySelectorAll('.entry-item').forEach(el => el.onclick = () => selectEntry(el.dataset.id));
-            lucide.createIcons();
+                }).join('');
+                list.querySelectorAll('.entry-item').forEach(el => el.onclick = () => selectEntry(el.dataset.id));
+                lucide.createIcons();
+            }
         }
-    }
 
-    async function selectEntry(id) {
-        selectedId = id;
-        renderList(document.getElementById('search-input').value);
-        const res = await api.get(`/api/entries/${id}`);
-        if (!res.ok) return;
-        const e = res.data;
-        const area = document.getElementById('content-area');
-        const typeLabel = { login: 'Login', note: 'Secure Note', card: 'Payment Card', identity: 'Identity' }[e.entry_type] || 'Entry';
-        const favBtn = e.favourite
-            ? `<button onclick="toggleFav('${e.id}')" class="text-amber-400 drop-shadow-md text-lg" title="Remove from favourites"><i data-lucide="star" class="w-5 h-5 fill-current"></i></button>`
-            : `<button onclick="toggleFav('${e.id}')" class="text-gray-600 hover:text-amber-400 drop-shadow-md text-lg" title="Add to favourites">☆</button>`;
+        async function selectEntry(id) {
+            selectedId = id;
+            renderList(document.getElementById('search-input').value);
+            const res = await api.get(`/api/entries/${id}`);
+            if (!res.ok) return;
+            const e = res.data;
+            const area = document.getElementById('content-area');
+            const typeLabel = { login: 'Login', note: 'Secure Note', card: 'Payment Card', identity: 'Identity' }[e.entry_type] || 'Entry';
+            const favBtn = e.favourite
+                ? `<button onclick="toggleFav('${e.id}')" class="text-amber-400 drop-shadow-md text-lg" title="Remove from favourites"><i data-lucide="star" class="w-5 h-5 fill-current"></i></button>`
+                : `<button onclick="toggleFav('${e.id}')" class="text-gray-600 hover:text-amber-400 drop-shadow-md text-lg" title="Add to favourites">☆</button>`;
 
-        let html = `<div class="max-w-2xl">
+            let html = `<div class="max-w-2xl">
             <div class="flex items-center justify-between mb-4">
                 <div class="flex items-center gap-2">
                     ${favBtn}
                     <div>
                         <h2 class="text-xl font-bold">${esc(e.title)}</h2>
-                        <span class="text-xs text-slate-400">${typeLabel}${(e.tags||[]).length ? ' · ' + e.tags.join(', ') : ''}</span>
+                        <span class="text-xs text-slate-400">${typeLabel}${(e.tags || []).length ? ' · ' + e.tags.join(', ') : ''}</span>
                     </div>
                 </div>
                 <div class="flex gap-2">
@@ -436,13 +526,13 @@
                 </div>
             </div>`;
 
-        if (e.username) html += fieldRow('Username', e.username, `<span class="text-sm">${esc(e.username)}</span>`, e.username);
-        if (e.password) html += fieldRow('Password', 'Password', `<span class="text-sm font-mono">${'•'.repeat(Math.min(e.password.length, 20))}</span>`, e.password);
-        if (e.url) html += fieldRow('URL', 'URL', `<a href="${esc(e.url)}" target="_blank" class="text-amber-400 drop-shadow-md hover:underline text-sm">${esc(e.url)}</a>`, e.url);
-        if (e.notes) html += `<div class="mb-3"><div class="text-xs text-slate-400 mb-1">Notes</div><div class="text-sm glass-card p-3 rounded whitespace-pre-wrap">${esc(e.notes)}</div></div>`;
+            if (e.username) html += fieldRow('Username', e.username, `<span class="text-sm">${esc(e.username)}</span>`, e.username);
+            if (e.password) html += fieldRow('Password', 'Password', `<span class="text-sm font-mono">${'•'.repeat(Math.min(e.password.length, 20))}</span>`, e.password);
+            if (e.url) html += fieldRow('URL', 'URL', `<a href="${esc(e.url)}" target="_blank" class="text-amber-400 drop-shadow-md hover:underline text-sm">${esc(e.url)}</a>`, e.url);
+            if (e.notes) html += `<div class="mb-3"><div class="text-xs text-slate-400 mb-1">Notes</div><div class="text-sm glass-card p-3 rounded whitespace-pre-wrap">${esc(e.notes)}</div></div>`;
 
-        if (e.totp_secret) {
-            html += `<div class="mb-3">
+            if (e.totp_secret) {
+                html += `<div class="mb-3">
                 <div class="text-xs text-slate-400 mb-1">TOTP</div>
                 <div class="flex items-center gap-3 glass-card p-3 rounded">
                     <span id="totp-code" class="text-2xl font-mono text-amber-400 drop-shadow-md tracking-widest">------</span>
@@ -454,405 +544,406 @@
                     <button onclick="refreshTotp('${e.id}')" class="p-1.5 glass rounded hover:text-amber-400 transition-colors" title="Refresh TOTP"><i data-lucide="refresh-cw" class="w-4 h-4"></i></button>
                 </div>
             </div>`;
-            startTotpTimer(e.id);
-        }
+                startTotpTimer(e.id);
+            }
 
-        html += `<div class="text-xs text-gray-600 mt-6">
+            html += `<div class="text-xs text-gray-600 mt-6">
             Created: ${fmtDate(e.created)} · Modified: ${fmtDate(e.modified)}
         </div></div>`;
-        area.innerHTML = html; lucide.createIcons();
-    }
+            area.innerHTML = html; lucide.createIcons();
+        }
 
-    function fieldRow(label, tooltip, display, copyVal) {
-        return `<div class="mb-3 flex items-center justify-between glass-card p-3 rounded group">
+        function fieldRow(label, tooltip, display, copyVal) {
+            return `<div class="mb-3 flex items-center justify-between glass-card p-3 rounded group">
             <div class="min-w-0"><div class="text-xs text-slate-400 mb-0.5">${label}</div>${display}</div>
             ${copyVal ? `<button onclick="copyText('${esc(copyVal).replace(/'/g, "\\'")}')" class="text-xs px-2 py-1 glass rounded hover:bg-gray-700 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 ml-2">Copy</button>` : ''}
         </div>`;
-    }
-
-    async function toggleFav(id) {
-        const res = await api.post(`/api/entries/${id}/favourite`);
-        if (res.ok) { await loadEntries(); selectEntry(id); }
-    }
-    window.toggleFav = toggleFav;
-
-    let totpExpireTime = 0;
-
-    async function refreshTotp(id) {
-        const res = await api.get(`/api/entries/${id}/totp`);
-        if (res.ok) {
-            document.getElementById('totp-code').textContent = res.data.code;
-            const remaining = parseInt(res.data.remaining);
-            totpExpireTime = Date.now() + (remaining * 1000);
         }
-    }
-    window.refreshTotp = refreshTotp;
 
-    function startTotpTimer(id) {
-        clearInterval(totpInterval);
-        totpExpireTime = Date.now() + 30000;
-        refreshTotp(id);
-        totpInterval = setInterval(() => {
-            const now = Date.now();
-            let remainingMs = totpExpireTime - now;
-            
-            if (remainingMs <= 0) {
-                totpExpireTime = now + 30000;
-                refreshTotp(id);
-                remainingMs = 30000;
+        async function toggleFav(id) {
+            const res = await api.post(`/api/entries/${id}/favourite`);
+            if (res.ok) { await loadEntries(); selectEntry(id); }
+        }
+        window.toggleFav = toggleFav;
+
+        let totpExpireTime = 0;
+
+        async function refreshTotp(id) {
+            const res = await api.get(`/api/entries/${id}/totp`);
+            if (res.ok) {
+                document.getElementById('totp-code').textContent = res.data.code;
+                const remaining = parseInt(res.data.remaining);
+                totpExpireTime = Date.now() + (remaining * 1000);
             }
-            
-            const bar = document.getElementById('totp-bar');
-            const rem = document.getElementById('totp-remaining');
-            if (bar) bar.style.width = `${(remainingMs / 30000) * 100}%`;
-            if (rem) rem.textContent = `${Math.ceil(remainingMs / 1000)}s`;
-        }, 50);
-    }
+        }
+        window.refreshTotp = refreshTotp;
 
-    // ── Helpers ────────────────────────────────────────────────────
-    function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
-    function fmtDate(s) { return new Date(s).toLocaleString(); }
+        function startTotpTimer(id) {
+            clearInterval(totpInterval);
+            totpExpireTime = Date.now() + 30000;
+            refreshTotp(id);
+            totpInterval = setInterval(() => {
+                const now = Date.now();
+                let remainingMs = totpExpireTime - now;
 
-    // ── Entry CRUD ─────────────────────────────────────────────────
-    window.editEntry = async (id) => {
-        const res = await api.get(`/api/entries/${id}`);
-        if (!res.ok) return;
-        const e = res.data;
-        document.getElementById('modal-entry-title').innerHTML = '<i data-lucide="edit-2" class="w-5 h-5 text-amber-500 inline mr-2"></i>Edit Entry'; lucide.createIcons();
-        document.getElementById('entry-id').value = e.id;
-        document.getElementById('entry-type').value = e.entry_type;
-        document.getElementById('entry-title').value = e.title;
-        document.getElementById('entry-username').value = e.username || '';
-        document.getElementById('entry-password').value = e.password || '';
-        document.getElementById('entry-url').value = e.url || '';
-        document.getElementById('entry-totp').value = e.totp_secret || '';
-        document.getElementById('entry-notes').value = e.notes || '';
-        updateEntryTypeFields();
-        showModal('modal-entry');
-    };
+                if (remainingMs <= 0) {
+                    totpExpireTime = now + 30000;
+                    refreshTotp(id);
+                    remainingMs = 30000;
+                }
 
-    window.deleteEntry = async (id) => {
-        if (!confirm('Delete this entry?')) return;
-        await api.del(`/api/entries/${id}`);
-        selectedId = null;
-        document.getElementById('content-area').innerHTML = '<div class="text-center text-slate-400 mt-20"><div class="flex justify-center mb-4 text-slate-600"><i data-lucide="lock" class="w-16 h-16 opacity-50"></i></div><p>Select an entry</p></div>';
-        await loadEntries();
-    };
+                const bar = document.getElementById('totp-bar');
+                const rem = document.getElementById('totp-remaining');
+                if (bar) bar.style.width = `${(remainingMs / 30000) * 100}%`;
+                if (rem) rem.textContent = `${Math.ceil(remainingMs / 1000)}s`;
+            }, 50);
+        }
 
-    
-    function updateEntryTypeFields() {
-        const type = document.getElementById('entry-type').value;
-        const loginFields = document.getElementById('login-fields');
-        const totpField = document.getElementById('totp-field');
-        
-        loginFields.style.display = type === 'login' ? 'block' : 'none';
-        totpField.style.display = (type === 'login' || type === 'authenticator') ? 'block' : 'none';
-    }
+        // ── Helpers ────────────────────────────────────────────────────
+        function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+        function fmtDate(s) { return new Date(s).toLocaleString(); }
+
+        // ── Entry CRUD ─────────────────────────────────────────────────
+        window.editEntry = async (id) => {
+            const res = await api.get(`/api/entries/${id}`);
+            if (!res.ok) return;
+            const e = res.data;
+            document.getElementById('modal-entry-title').innerHTML = '<i data-lucide="edit-2" class="w-5 h-5 text-amber-500 inline mr-2"></i>Edit Entry'; lucide.createIcons();
+            document.getElementById('entry-id').value = e.id;
+            document.getElementById('entry-type').value = e.entry_type;
+            document.getElementById('entry-title').value = e.title;
+            document.getElementById('entry-username').value = e.username || '';
+            document.getElementById('entry-password').value = e.password || '';
+            document.getElementById('entry-url').value = e.url || '';
+            document.getElementById('entry-totp').value = e.totp_secret || '';
+            document.getElementById('entry-notes').value = e.notes || '';
+            updateEntryTypeFields();
+            showModal('modal-entry');
+        };
+
+        window.deleteEntry = async (id) => {
+            if (!confirm('Delete this entry?')) return;
+            await api.del(`/api/entries/${id}`);
+            selectedId = null;
+            document.getElementById('content-area').innerHTML = '<div class="text-center text-slate-400 mt-20"><div class="flex justify-center mb-4 text-slate-600"><i data-lucide="lock" class="w-16 h-16 opacity-50"></i></div><p>Select an entry</p></div>';
+            await loadEntries();
+        };
 
 
-    // ── Init ───────────────────────────────────────────────────────
-    // Auth forms
-    document.getElementById('unlock-form').onsubmit = async (e) => {
-        e.preventDefault();
-        const pw = document.getElementById('unlock-password').value;
-        const err = document.getElementById('unlock-error');
-        const res = await api.post('/api/unlock', { password: pw });
-        if (res.ok) { showMain(); await loadEntries(); }
-        else { err.textContent = res.error || 'Failed to unlock'; err.classList.remove('hidden'); }
-    };
+        function updateEntryTypeFields() {
+            const type = document.getElementById('entry-type').value;
+            const loginFields = document.getElementById('login-fields');
+            const totpField = document.getElementById('totp-field');
 
-    document.getElementById('create-form').onsubmit = async (e) => {
-        e.preventDefault();
-        const pw = document.getElementById('create-password').value;
-        const confirm = document.getElementById('create-confirm').value;
-        const err = document.getElementById('create-error');
-        err.classList.add('hidden');
-        if (pw.length < 8) { err.textContent = 'Password must be at least 8 characters'; err.classList.remove('hidden'); return; }
-        if (pw !== confirm) { err.textContent = 'Passwords do not match'; err.classList.remove('hidden'); return; }
-        const res = await api.post('/api/vault', { password: pw });
-        if (res.ok) { showMain(); await loadEntries(); }
-        else { err.textContent = res.error || 'Failed to create vault'; err.classList.remove('hidden'); }
-    };
+            loginFields.style.display = type === 'login' ? 'block' : 'none';
+            totpField.style.display = (type === 'login' || type === 'authenticator') ? 'block' : 'none';
+        }
 
-    document.getElementById('show-create').onclick = () => {
-        document.getElementById('unlock-form').classList.add('hidden');
-        document.getElementById('create-form').classList.remove('hidden');
-        document.getElementById('create-password').focus();
-    };
-    document.getElementById('show-unlock').onclick = () => {
-        document.getElementById('create-form').classList.add('hidden');
-        document.getElementById('unlock-form').classList.remove('hidden');
-        document.getElementById('unlock-password').focus();
-    };
 
-    // Header buttons
-    document.getElementById('btn-lock').onclick = async () => { await api.post('/api/lock'); showAuth(); };
-    document.getElementById('btn-import').onclick = () => showModal('modal-import');
-    document.getElementById('btn-migrate').onclick = () => showModal('modal-migrate');
-    document.getElementById('btn-info').onclick = async () => {
-        const res = await api.get('/api/status');
-        lucide.createIcons();
-        if (!res.ok) return;
-        const d = res.data;
-        document.getElementById('info-content').innerHTML = `
+        // ── Init ───────────────────────────────────────────────────────
+        // Auth forms
+        document.getElementById('unlock-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const pw = document.getElementById('unlock-password').value;
+            const err = document.getElementById('unlock-error');
+            const res = await api.post('/api/unlock', { password: pw });
+            if (res.ok) { showMain(); await loadEntries(); }
+            else { err.textContent = res.error || 'Failed to unlock'; err.classList.remove('hidden'); }
+        };
+
+        document.getElementById('create-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const pw = document.getElementById('create-password').value;
+            const confirm = document.getElementById('create-confirm').value;
+            const err = document.getElementById('create-error');
+            err.classList.add('hidden');
+            if (pw.length < 8) { err.textContent = 'Password must be at least 8 characters'; err.classList.remove('hidden'); return; }
+            if (pw !== confirm) { err.textContent = 'Passwords do not match'; err.classList.remove('hidden'); return; }
+            const res = await api.post('/api/vault', { password: pw });
+            if (res.ok) { showMain(); await loadEntries(); }
+            else { err.textContent = res.error || 'Failed to create vault'; err.classList.remove('hidden'); }
+        };
+
+        document.getElementById('show-create').onclick = () => {
+            document.getElementById('unlock-form').classList.add('hidden');
+            document.getElementById('create-form').classList.remove('hidden');
+            document.getElementById('create-password').focus();
+        };
+        document.getElementById('show-unlock').onclick = () => {
+            document.getElementById('create-form').classList.add('hidden');
+            document.getElementById('unlock-form').classList.remove('hidden');
+            document.getElementById('unlock-password').focus();
+        };
+
+        // Header buttons
+        document.getElementById('btn-lock').onclick = async () => { await api.post('/api/lock'); showAuth(); };
+        document.getElementById('btn-import').onclick = () => showModal('modal-import');
+        document.getElementById('btn-migrate').onclick = () => showModal('modal-migrate');
+        document.getElementById('btn-info').onclick = async () => {
+            const res = await api.get('/api/status');
+            lucide.createIcons();
+            if (!res.ok) return;
+            const d = res.data;
+            document.getElementById('info-content').innerHTML = `
             <div class="flex justify-between"><span class="text-slate-400">Path</span><span class="font-mono text-xs">${esc(d.vault_path)}</span></div>
             <div class="flex justify-between"><span class="text-slate-400">Entries</span><span>${d.entry_count}</span></div>
             <div class="flex justify-between"><span class="text-slate-400">Format</span><span>.emberkeys (EMBK v1)</span></div>
             <div class="flex justify-between"><span class="text-slate-400">Cipher</span><span>AES-256-GCM</span></div>
             <div class="flex justify-between"><span class="text-slate-400">KDF</span><span>Argon2id (64MB)</span></div>`;
-        showModal('modal-info');
-    };
+            showModal('modal-info');
+        };
 
-    // Destroy vault
-    document.getElementById('btn-destroy-vault').onclick = async () => {
-        if (!confirm('This will permanently delete your vault and ALL entries.\n\nAre you absolutely sure?')) return;
-        const name = prompt('Type the vault name to confirm deletion:');
-        if (!name) return;
-        const res = await api.post('/api/vault/destroy', {});
-        if (res.ok) {
-            alert('Vault deleted.');
-            showAuth();
-        } else {
-            alert('Failed: ' + (res.error || 'Unknown error'));
-        }
-    };
-
-    // Update check
-    document.getElementById('btn-update').onclick = async () => {
-        const res = await api.get('/api/update/check');
-        if (res.ok && res.data.update_available) {
-            if (confirm(`Update available: ${res.data.current_version} -> ${res.data.latest_version}\n\nUpdate now?`)) {
-                const updateRes = await api.post('/api/update', {});
-                if (updateRes.ok) {
-                    alert('Update completed! Reload the page to use the new version.');
-                } else {
-                    alert('Update failed: ' + (updateRes.error || 'Unknown error'));
-                }
+        // Destroy vault
+        document.getElementById('btn-destroy-vault').onclick = async () => {
+            if (!confirm('This will permanently delete your vault and ALL entries.\n\nAre you absolutely sure?')) return;
+            const name = prompt('Type the vault name to confirm deletion:');
+            if (!name) return;
+            const res = await api.post('/api/vault/destroy', {});
+            if (res.ok) {
+                alert('Vault deleted.');
+                showAuth();
+            } else {
+                alert('Failed: ' + (res.error || 'Unknown error'));
             }
-        } else {
-            alert('You\'re running the latest version!');
-        }
-    };
+        };
 
-    // Check for updates on load
-    async function checkForUpdates() {
-        try {
+        // Update check
+        document.getElementById('btn-update').onclick = async () => {
             const res = await api.get('/api/update/check');
             if (res.ok && res.data.update_available) {
-                const btn = document.getElementById('btn-update');
-                btn.classList.remove('hidden');
-                btn.title = `Update available: ${res.data.current_version} -> ${res.data.latest_version}`;
+                if (confirm(`Update available: ${res.data.current_version} -> ${res.data.latest_version}\n\nUpdate now?`)) {
+                    const updateRes = await api.post('/api/update', {});
+                    if (updateRes.ok) {
+                        alert('Update completed! Reload the page to use the new version.');
+                    } else {
+                        alert('Update failed: ' + (updateRes.error || 'Unknown error'));
+                    }
+                }
+            } else {
+                alert('You\'re running the latest version!');
             }
-        } catch (e) {}
-    }
-    checkForUpdates();
-
-    // Search
-    document.getElementById('search-input').oninput = (e) => renderList(e.target.value);
-
-    // Filter tabs
-    document.querySelectorAll('.filter-tab').forEach(tab => {
-        tab.onclick = () => {
-            document.querySelectorAll('.filter-tab').forEach(t => { t.className = 'filter-tab flex-1 py-1.5 text-slate-400 hover:text-gray-300'; });
-            tab.className = 'filter-tab flex-1 py-1.5 text-amber-400 drop-shadow-md border-b-2 border-amber-400';
-            activeFilter = tab.dataset.filter;
-            activeTag = null;
-            renderList(document.getElementById('search-input').value);
-            renderTags();
         };
-    });
 
-    // Add entry
-    
-    document.getElementById('btn-add').onclick = () => {
-        document.getElementById('modal-entry-title').innerHTML = '<i data-lucide="file-plus" class="w-5 h-5 text-amber-500 inline mr-2"></i>New Entry';
-        document.getElementById('entry-id').value = '';
-        document.getElementById('entry-form').reset();
-        document.getElementById('entry-type').value = activeTab === 'authenticator' ? 'authenticator' : 'login';
-        updateEntryTypeFields();
-        showModal('modal-entry');
-        document.getElementById('entry-title').focus();
-        lucide.createIcons();
-    };
-
-    document.getElementById('entry-type').onchange = updateEntryTypeFields;
-
-    document.getElementById('tab-vault').onclick = () => {
-        activeTab = 'vault';
-        document.getElementById('tab-vault').className = "flex-1 py-2 text-amber-400 drop-shadow-md border-b-2 border-amber-400 glass-card/50 transition-all";
-        document.getElementById('tab-authenticator').className = "flex-1 py-2 text-slate-400 hover:text-gray-300 hover:glass/50 transition-all";
-        renderList(document.getElementById('search-input').value);
-    };
-
-    document.getElementById('tab-authenticator').onclick = () => {
-        activeTab = 'authenticator';
-        document.getElementById('tab-authenticator').className = "flex-1 py-2 text-amber-400 drop-shadow-md border-b-2 border-amber-400 glass-card/50 transition-all";
-        document.getElementById('tab-vault').className = "flex-1 py-2 text-slate-400 hover:text-gray-300 hover:glass/50 transition-all";
-        renderList(document.getElementById('search-input').value);
-    };
-
-    document.getElementById('entry-cancel').onclick = () => hideModal('modal-entry');
-    document.getElementById('entry-modal-close').onclick = () => hideModal('modal-entry');
-
-    // Entry form submit
-    document.getElementById('entry-form').onsubmit = async (e) => {
-        e.preventDefault();
-        const id = document.getElementById('entry-id').value;
-        const body = {
-            title: document.getElementById('entry-title').value,
-            username: document.getElementById('entry-username').value,
-            password: document.getElementById('entry-password').value,
-            url: document.getElementById('entry-url').value,
-            notes: document.getElementById('entry-notes').value,
-            totp_secret: document.getElementById('entry-totp').value,
-            entry_type: document.getElementById('entry-type').value,
-        };
-        if (id) await api.put(`/api/entries/${id}`, body);
-        else await api.post('/api/entries', body);
-        hideModal('modal-entry');
-        await loadEntries();
-        if (id) selectEntry(id);
-    };
-
-    // Generate password button in entry form → automatically fills password field
-    document.getElementById('entry-gen-pw').onclick = async () => { 
-        const res = await api.post('/api/generate', { passphrase: false, length: 20 });
-        if (res.ok) document.getElementById('entry-password').value = res.data.password;
-    };
-    document.getElementById('entry-copy-pw').onclick = () => { copyText(document.getElementById('entry-password').value); };
-
-    // Generator
-    function openGenerator() {
-        genType = 'password';
-        updateGenType();
-        generatePassword();
-        const useBtn = document.getElementById('gen-use');
-        if (genTargetField) { useBtn.classList.remove('hidden'); useBtn.textContent = 'Use'; }
-        else { useBtn.classList.add('hidden'); }
-        showModal('modal-generate');
-    }
-    const btnGen = document.getElementById('btn-generate'); if(btnGen) btnGen.onclick = openGenerator;
-
-    document.getElementById('gen-type-password').onclick = () => { genType = 'password'; updateGenType(); generatePassword(); };
-    document.getElementById('gen-type-passphrase').onclick = () => { genType = 'passphrase'; updateGenType(); generatePassword(); };
-    document.getElementById('gen-refresh').onclick = generatePassword;
-    document.getElementById('gen-close').onclick = () => { genTargetField = null; hideModal('modal-generate'); };
-    document.getElementById('gen-copy').onclick = () => { const t = document.getElementById('gen-result').textContent; if (t !== '—') copyText(t); };
-    document.getElementById('gen-use').onclick = () => {
-        const val = document.getElementById('gen-result').textContent;
-        if (genTargetField && val !== '—') {
-            document.getElementById(genTargetField).value = val;
-            genTargetField = null;
-            hideModal('modal-generate');
+        // Check for updates on load
+        async function checkForUpdates() {
+            try {
+                const res = await api.get('/api/update/check');
+                if (res.ok && res.data.update_available) {
+                    const btn = document.getElementById('btn-update');
+                    btn.classList.remove('hidden');
+                    btn.title = `Update available: ${res.data.current_version} -> ${res.data.latest_version}`;
+                }
+            } catch (e) { }
         }
-    };
+        checkForUpdates();
 
-    function updateGenType() {
-        document.getElementById('gen-type-password').className = `flex-1 py-1.5 rounded text-sm ${genType === 'password' ? 'bg-amber-600' : 'glass'}`;
-        document.getElementById('gen-type-passphrase').className = `flex-1 py-1.5 rounded text-sm ${genType === 'passphrase' ? 'bg-amber-600' : 'glass'}`;
-        document.getElementById('gen-password-opts').classList.toggle('hidden', genType !== 'password');
-        document.getElementById('gen-passphrase-opts').classList.toggle('hidden', genType !== 'passphrase');
-    }
+        // Search
+        document.getElementById('search-input').oninput = (e) => renderList(e.target.value);
 
-    async function generatePassword() {
-        const body = genType === 'passphrase'
-            ? { passphrase: true, words: +document.getElementById('gen-words').value, separator: document.getElementById('gen-separator').value, capitalize: document.getElementById('gen-capitalize').checked, number: document.getElementById('gen-number').checked }
-            : { passphrase: false, length: +document.getElementById('gen-length').value };
-        const res = await api.post('/api/generate', body);
-        if (res.ok) document.getElementById('gen-result').textContent = res.data.password;
-    }
-
-    // Import
-    document.getElementById('import-submit').onclick = async () => {
-        const fileInput = document.getElementById('import-file');
-        const format = document.getElementById('import-format').value;
-        const resultEl = document.getElementById('import-result');
-        if (!fileInput.files.length) { resultEl.textContent = 'Select a file first'; resultEl.classList.remove('hidden'); return; }
-
-        const formData = new FormData();
-        formData.append('file', fileInput.files[0]);
-        formData.append('format', format);
-
-        // For now, we use JSON upload since we don't have multipart
-        // Read file as text and send as JSON
-        const text = await fileInput.files[0].text();
-        const res = await fetch('/api/import', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ content: text, format: format, filename: fileInput.files[0].name })
+        // Filter tabs
+        document.querySelectorAll('.filter-tab').forEach(tab => {
+            tab.onclick = () => {
+                document.querySelectorAll('.filter-tab').forEach(t => { t.className = 'filter-tab flex-1 py-1.5 text-slate-400 hover:text-gray-300'; });
+                tab.className = 'filter-tab flex-1 py-1.5 text-amber-400 drop-shadow-md border-b-2 border-amber-400';
+                activeFilter = tab.dataset.filter;
+                activeTag = null;
+                renderList(document.getElementById('search-input').value);
+                renderTags();
+            };
         });
-        const data = await res.json();
-        if (data.ok) {
-            resultEl.innerHTML = `<span class="text-green-400">✓ Imported ${data.data?.imported || 0} entries</span>`;
-            resultEl.classList.remove('hidden');
+
+        // Add entry
+
+        document.getElementById('btn-add').onclick = () => {
+            document.getElementById('modal-entry-title').innerHTML = '<i data-lucide="file-plus" class="w-5 h-5 text-amber-500 inline mr-2"></i>New Entry';
+            document.getElementById('entry-id').value = '';
+            document.getElementById('entry-form').reset();
+            document.getElementById('entry-type').value = activeTab === 'authenticator' ? 'authenticator' : 'login';
+            updateEntryTypeFields();
+            showModal('modal-entry');
+            document.getElementById('entry-title').focus();
+            lucide.createIcons();
+        };
+
+        document.getElementById('entry-type').onchange = updateEntryTypeFields;
+
+        document.getElementById('tab-vault').onclick = () => {
+            activeTab = 'vault';
+            document.getElementById('tab-vault').className = "flex-1 py-2 text-amber-400 drop-shadow-md border-b-2 border-amber-400 glass-card/50 transition-all";
+            document.getElementById('tab-authenticator').className = "flex-1 py-2 text-slate-400 hover:text-gray-300 hover:glass/50 transition-all";
+            renderList(document.getElementById('search-input').value);
+        };
+
+        document.getElementById('tab-authenticator').onclick = () => {
+            activeTab = 'authenticator';
+            document.getElementById('tab-authenticator').className = "flex-1 py-2 text-amber-400 drop-shadow-md border-b-2 border-amber-400 glass-card/50 transition-all";
+            document.getElementById('tab-vault').className = "flex-1 py-2 text-slate-400 hover:text-gray-300 hover:glass/50 transition-all";
+            renderList(document.getElementById('search-input').value);
+        };
+
+        document.getElementById('entry-cancel').onclick = () => hideModal('modal-entry');
+        document.getElementById('entry-modal-close').onclick = () => hideModal('modal-entry');
+
+        // Entry form submit
+        document.getElementById('entry-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('entry-id').value;
+            const body = {
+                title: document.getElementById('entry-title').value,
+                username: document.getElementById('entry-username').value,
+                password: document.getElementById('entry-password').value,
+                url: document.getElementById('entry-url').value,
+                notes: document.getElementById('entry-notes').value,
+                totp_secret: document.getElementById('entry-totp').value,
+                entry_type: document.getElementById('entry-type').value,
+            };
+            if (id) await api.put(`/api/entries/${id}`, body);
+            else await api.post('/api/entries', body);
+            hideModal('modal-entry');
             await loadEntries();
-        } else {
-            resultEl.innerHTML = `<span class="text-red-400">✗ ${data.error}</span>`;
-            resultEl.classList.remove('hidden');
-        }
-    };
+            if (id) selectEntry(id);
+        };
 
-    // Migrate
-    document.getElementById('migrate-submit').onclick = async () => {
-        const target = document.getElementById('migrate-target').value;
-        const password = document.getElementById('migrate-password').value;
-        const confirm = document.getElementById('migrate-password-confirm').value;
-        const resultEl = document.getElementById('migrate-result');
+        // Generate password button in entry form → automatically fills password field
+        document.getElementById('entry-gen-pw').onclick = async () => {
+            const res = await api.post('/api/generate', { passphrase: false, length: 20 });
+            if (res.ok) document.getElementById('entry-password').value = res.data.password;
+        };
+        document.getElementById('entry-copy-pw').onclick = () => { copyText(document.getElementById('entry-password').value); };
 
-        if (!password) { resultEl.textContent = 'Enter export password'; resultEl.classList.remove('hidden'); return; }
-        if (password !== confirm) { resultEl.textContent = 'Passwords do not match'; resultEl.classList.remove('hidden'); return; }
-        if (password.length < 8) { resultEl.textContent = 'Password must be at least 8 characters'; resultEl.classList.remove('hidden'); return; }
+        // Generator
+        function openGenerator() {
+            genType = 'password';
+            updateGenType();
+            generatePassword();
+            const useBtn = document.getElementById('gen-use');
+            if (genTargetField) { useBtn.classList.remove('hidden'); useBtn.textContent = 'Use'; }
+            else { useBtn.classList.add('hidden'); }
+            showModal('modal-generate');
+        }
+        const btnGen = document.getElementById('btn-generate'); if (btnGen) btnGen.onclick = openGenerator;
 
-        const res = await api.post('/api/migrate', { target, password });
-        if (res.ok) {
-            const d = res.data;
-            const binary = atob(d.data);
-            const bytes = new Uint8Array(binary.length);
-            for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-            const blob = new Blob([bytes], { type: target === 'kdbx' ? 'application/octet-stream' : 'application/json' });
-            const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = d.filename; a.click();
-            resultEl.innerHTML = `<span class="text-green-400">✓ Migrated ${d.size} bytes</span>`;
-            resultEl.classList.remove('hidden');
-        } else {
-            resultEl.innerHTML = `<span class="text-red-400">✗ ${res.error}</span>`;
-            resultEl.classList.remove('hidden');
-        }
-    };
-
-    // Keyboard shortcuts
-    document.addEventListener('keydown', (e) => {
-        // Ctrl+K → focus search
-        if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-            e.preventDefault();
-            document.getElementById('search-input').focus();
-        }
-        // Ctrl+N → new entry
-        if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
-            e.preventDefault();
-            document.getElementById('btn-add').click();
-        }
-        // Escape → close modals
-        if (e.key === 'Escape') {
-            ['modal-generate', 'modal-entry', 'modal-info', 'modal-import', 'modal-migrate'].forEach(id => {
-                const m = document.getElementById(id);
-                if (!m.classList.contains('hidden')) { hideModal(id); genTargetField = null; }
-            });
-        }
-    });
-
-    // Check vault status on load
-    (async () => {
-        const res = await api.get('/api/status');
-        lucide.createIcons();
-        if (res.ok) {
-            if (!res.data.vault_exists) {
-                document.getElementById('unlock-form').classList.add('hidden');
-                document.getElementById('create-form').classList.remove('hidden');
-                document.getElementById('create-password').focus();
+        document.getElementById('gen-type-password').onclick = () => { genType = 'password'; updateGenType(); generatePassword(); };
+        document.getElementById('gen-type-passphrase').onclick = () => { genType = 'passphrase'; updateGenType(); generatePassword(); };
+        document.getElementById('gen-refresh').onclick = generatePassword;
+        document.getElementById('gen-close').onclick = () => { genTargetField = null; hideModal('modal-generate'); };
+        document.getElementById('gen-copy').onclick = () => { const t = document.getElementById('gen-result').textContent; if (t !== '—') copyText(t); };
+        document.getElementById('gen-use').onclick = () => {
+            const val = document.getElementById('gen-result').textContent;
+            if (genTargetField && val !== '—') {
+                document.getElementById(genTargetField).value = val;
+                genTargetField = null;
+                hideModal('modal-generate');
             }
+        };
+
+        function updateGenType() {
+            document.getElementById('gen-type-password').className = `flex-1 py-1.5 rounded text-sm ${genType === 'password' ? 'bg-amber-600' : 'glass'}`;
+            document.getElementById('gen-type-passphrase').className = `flex-1 py-1.5 rounded text-sm ${genType === 'passphrase' ? 'bg-amber-600' : 'glass'}`;
+            document.getElementById('gen-password-opts').classList.toggle('hidden', genType !== 'password');
+            document.getElementById('gen-passphrase-opts').classList.toggle('hidden', genType !== 'passphrase');
         }
-        connectWs();
-    })();
+
+        async function generatePassword() {
+            const body = genType === 'passphrase'
+                ? { passphrase: true, words: +document.getElementById('gen-words').value, separator: document.getElementById('gen-separator').value, capitalize: document.getElementById('gen-capitalize').checked, number: document.getElementById('gen-number').checked }
+                : { passphrase: false, length: +document.getElementById('gen-length').value };
+            const res = await api.post('/api/generate', body);
+            if (res.ok) document.getElementById('gen-result').textContent = res.data.password;
+        }
+
+        // Import
+        document.getElementById('import-submit').onclick = async () => {
+            const fileInput = document.getElementById('import-file');
+            const format = document.getElementById('import-format').value;
+            const resultEl = document.getElementById('import-result');
+            if (!fileInput.files.length) { resultEl.textContent = 'Select a file first'; resultEl.classList.remove('hidden'); return; }
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            formData.append('format', format);
+
+            // For now, we use JSON upload since we don't have multipart
+            // Read file as text and send as JSON
+            const text = await fileInput.files[0].text();
+            const res = await fetch('/api/import', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ content: text, format: format, filename: fileInput.files[0].name })
+            });
+            const data = await res.json();
+            if (data.ok) {
+                resultEl.innerHTML = `<span class="text-green-400">✓ Imported ${data.data?.imported || 0} entries</span>`;
+                resultEl.classList.remove('hidden');
+                await loadEntries();
+            } else {
+                resultEl.innerHTML = `<span class="text-red-400">✗ ${data.error}</span>`;
+                resultEl.classList.remove('hidden');
+            }
+        };
+
+        // Migrate
+        document.getElementById('migrate-submit').onclick = async () => {
+            const target = document.getElementById('migrate-target').value;
+            const password = document.getElementById('migrate-password').value;
+            const confirm = document.getElementById('migrate-password-confirm').value;
+            const resultEl = document.getElementById('migrate-result');
+
+            if (!password) { resultEl.textContent = 'Enter export password'; resultEl.classList.remove('hidden'); return; }
+            if (password !== confirm) { resultEl.textContent = 'Passwords do not match'; resultEl.classList.remove('hidden'); return; }
+            if (password.length < 8) { resultEl.textContent = 'Password must be at least 8 characters'; resultEl.classList.remove('hidden'); return; }
+
+            const res = await api.post('/api/migrate', { target, password });
+            if (res.ok) {
+                const d = res.data;
+                const binary = atob(d.data);
+                const bytes = new Uint8Array(binary.length);
+                for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+                const blob = new Blob([bytes], { type: target === 'kdbx' ? 'application/octet-stream' : 'application/json' });
+                const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = d.filename; a.click();
+                resultEl.innerHTML = `<span class="text-green-400">✓ Migrated ${d.size} bytes</span>`;
+                resultEl.classList.remove('hidden');
+            } else {
+                resultEl.innerHTML = `<span class="text-red-400">✗ ${res.error}</span>`;
+                resultEl.classList.remove('hidden');
+            }
+        };
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            // Ctrl+K → focus search
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                document.getElementById('search-input').focus();
+            }
+            // Ctrl+N → new entry
+            if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+                e.preventDefault();
+                document.getElementById('btn-add').click();
+            }
+            // Escape → close modals
+            if (e.key === 'Escape') {
+                ['modal-generate', 'modal-entry', 'modal-info', 'modal-import', 'modal-migrate'].forEach(id => {
+                    const m = document.getElementById(id);
+                    if (!m.classList.contains('hidden')) { hideModal(id); genTargetField = null; }
+                });
+            }
+        });
+
+        // Check vault status on load
+        (async () => {
+            const res = await api.get('/api/status');
+            lucide.createIcons();
+            if (res.ok) {
+                if (!res.data.vault_exists) {
+                    document.getElementById('unlock-form').classList.add('hidden');
+                    document.getElementById('create-form').classList.remove('hidden');
+                    document.getElementById('create-password').focus();
+                }
+            }
+            connectWs();
+        })();
     </script>
 </body>
+
 </html>
