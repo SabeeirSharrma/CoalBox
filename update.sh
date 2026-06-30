@@ -50,15 +50,30 @@ if [ ! -f "$CLI_BINARY" ]; then
     exit 1
 fi
 
-if [ -w "$INSTALL_DIR" ]; then
-    cp "$CLI_BINARY" "${INSTALL_DIR}/coalbox"
-    [ -f "$WEB_BINARY" ] && cp "$WEB_BINARY" "${INSTALL_DIR}/coalbox-web"
-else
-    sudo cp "$CLI_BINARY" "${INSTALL_DIR}/coalbox"
-    [ -f "$WEB_BINARY" ] && sudo cp "$WEB_BINARY" "${INSTALL_DIR}/coalbox-web"
-fi
-
-chmod +x "${INSTALL_DIR}/coalbox"
-[ -f "${INSTALL_DIR}/coalbox-web" ] && chmod +x "${INSTALL_DIR}/coalbox-web"
+# Rename running binaries first, then copy new ones
+for bin in coalbox coalbox-web; do
+    target="${INSTALL_DIR}/${bin}"
+    new="target/release/${bin}"
+    if [ -f "$new" ]; then
+        if [ -f "$target" ]; then
+            if [ -w "$INSTALL_DIR" ]; then
+                mv "$target" "${target}.old" 2>/dev/null || sudo mv "$target" "${target}.old"
+                cp "$new" "$target"
+                rm -f "${target}.old"
+            else
+                sudo mv "$target" "${target}.old" 2>/dev/null || true
+                sudo cp "$new" "$target"
+                sudo rm -f "${target}.old"
+            fi
+        else
+            if [ -w "$INSTALL_DIR" ]; then
+                cp "$new" "$target"
+            else
+                sudo cp "$new" "$target"
+            fi
+        fi
+        chmod +x "$target" 2>/dev/null || sudo chmod +x "$target"
+    fi
+done
 
 info "Updated coalbox to $(coalbox --version 2>/dev/null | head -1 | awk '{print $2}' || echo 'latest')"
