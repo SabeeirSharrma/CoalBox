@@ -158,8 +158,13 @@ main() {
         [ -f "$web_binary" ] && sudo cp "$web_binary" "${INSTALL_DIR}/coalbox-web"
     fi
 
-    chmod +x "${INSTALL_DIR}/coalbox"
-    [ -f "${INSTALL_DIR}/coalbox-web" ] && chmod +x "${INSTALL_DIR}/coalbox-web"
+    if [ -w "$INSTALL_DIR" ]; then
+        chmod +x "${INSTALL_DIR}/coalbox"
+        [ -f "${INSTALL_DIR}/coalbox-web" ] && chmod +x "${INSTALL_DIR}/coalbox-web"
+    else
+        sudo chmod +x "${INSTALL_DIR}/coalbox"
+        [ -f "${INSTALL_DIR}/coalbox-web" ] && sudo chmod +x "${INSTALL_DIR}/coalbox-web"
+    fi
 
     # Verify
     if command -v coalbox &>/dev/null; then
