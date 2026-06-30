@@ -13,6 +13,7 @@
         .glass { background: #3f3f46; border: 1px solid #52525b; }
         .glass-card { background: #18181b; border: 1px solid #3f3f46; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5); }
         .glass-input { background: #27272a; border: 1px solid #52525b; transition: all 0.2s ease; }
+        .glass-input option { background: #27272a; color: #f1f5f9; }
         .glass-input:focus { border-color: #fbbf24; box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.2); outline: none; }
         .btn-primary { background: linear-gradient(to right, #d97706, #b45309); box-shadow: 0 4px 14px 0 rgba(217, 119, 6, 0.39); transition: all 0.2s ease; }
         .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(217, 119, 6, 0.4); }
@@ -194,6 +195,7 @@
                     <select id="entry-type" class="w-full px-3 py-2 glass-input rounded text-sm">
                         <option value="login">Login</option>
                         <option value="note">Secure Note</option>
+                        <option value="authenticator">Authenticator Only (TOTP)</option>
                     </select>
                     <input type="text" id="entry-title" placeholder="Title" class="w-full px-3 py-2 glass-input rounded text-sm" required>
                     <div id="login-fields">
