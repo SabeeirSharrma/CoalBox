@@ -180,6 +180,10 @@ enum Commands {
         /// Skip confirmation prompt
         #[arg(long)]
         yes: bool,
+
+        /// Force reinstall even if already on latest version
+        #[arg(long)]
+        force: bool,
     },
 
     /// Permanently delete a vault file
@@ -811,7 +815,7 @@ fn migrate_vault(cli: &Cli, target: &str, output: &str, vault_path_opt: &Option<
     }
 }
 
-fn check_and_update(cli: &Cli, skip_confirm: bool) {
+fn check_and_update(cli: &Cli, skip_confirm: bool, force: bool) {
     if !cli.quiet && !cli.json {
         println!("{}", "Checking for updates...".dimmed());
     }
@@ -821,7 +825,7 @@ fn check_and_update(cli: &Cli, skip_confirm: bool) {
         Err(e) => exit_error(cli, &format!("Failed to check for updates: {}", e)),
     };
 
-    if !check.update_available {
+    if !check.update_available && !force {
         if cli.json {
             json_output(&serde_json::json!({
                 "ok": true,
@@ -839,27 +843,38 @@ fn check_and_update(cli: &Cli, skip_confirm: bool) {
         return;
     }
 
-    if cli.json {
-        json_output(&serde_json::json!({
-            "ok": true,
-            "update_available": true,
-            "current_version": check.current_version,
-            "latest_version": check.latest_version,
-        }));
-    } else if !cli.quiet {
-        println!(
-            "{} New update available: {} -> {}",
-            "↑".cyan().bold(),
-            check.current_version,
-            check.latest_version.green().bold()
-        );
-        if let Some(ref release) = check.release
-            && !release.body.is_empty()
-        {
-            println!();
-            println!("{}", release.body);
+    if force && !check.update_available {
+        if !cli.quiet && !cli.json {
+            println!(
+                "{} Force reinstall: v{} -> v{}",
+                "→".cyan().bold(),
+                check.current_version,
+                check.latest_version
+            );
         }
-        println!();
+    } else if check.update_available {
+        if cli.json {
+            json_output(&serde_json::json!({
+                "ok": true,
+                "update_available": true,
+                "current_version": check.current_version,
+                "latest_version": check.latest_version,
+            }));
+        } else if !cli.quiet {
+            println!(
+                "{} New update available: {} -> {}",
+                "↑".cyan().bold(),
+                check.current_version,
+                check.latest_version.green().bold()
+            );
+            if let Some(ref release) = check.release
+                && !release.body.is_empty()
+            {
+                println!();
+                println!("{}", release.body);
+            }
+            println!();
+        }
     }
 
     if !skip_confirm && !cli.quiet {
@@ -1198,9 +1213,9 @@ fn main() {
             let c = Cli { json, quiet, command: Commands::Migrate { to: to.clone(), output: output.clone(), vault: vault.clone() } };
             migrate_vault(&c, &to, &output, &vault);
         }
-        Commands::Update { yes } => {
-            let c = Cli { json, quiet, command: Commands::Update { yes } };
-            check_and_update(&c, yes);
+        Commands::Update { yes, force } => {
+            let c = Cli { json, quiet, command: Commands::Update { yes, force } };
+            check_and_update(&c, yes, force);
         }
         Commands::Destroy { vault, yes } => {
             let c = Cli { json, quiet, command: Commands::Destroy { vault: vault.clone(), yes } };

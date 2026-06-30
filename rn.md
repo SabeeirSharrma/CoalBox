@@ -1,30 +1,21 @@
-# v0.6.5 — Uninstall + Vault Destroy
+# v0.6.6 — Force Flag
 
 ## What's new
 
-- **`uninstall.sh`** — removes coalbox binaries, preserves vault data
-- **`coalbox destroy`** — permanently delete a vault file
-- **WebUI vault delete** — delete vault from the Vault Info modal
-- **Confirmation prompts** — both CLI and WebUI require confirmation before destroying vaults
+- **`--force` flag** on `coalbox update` — reinstall even if already on latest version
 
 ## CLI Usage
 
 ```bash
-# Uninstall coalbox (keeps vault)
-bash uninstall.sh
+# Normal update (only if newer version available)
+coalbox update
 
-# Delete a vault (requires typing vault name to confirm)
-coalbox destroy
+# Force reinstall (rebuild and reinstall current version)
+coalbox update --force
 
-# Delete without confirmation (dangerous!)
-coalbox destroy --yes
+# Force + skip confirmation
+coalbox update --force --yes
 ```
-
-## WebUI
-
-- "Delete Vault" button in Vault Info modal
-- Requires typing vault name to confirm
-- Vault is permanently deleted, all entries lost
 
 ## Build from source
 
